@@ -12,6 +12,34 @@ This repository is the spine for the Mizan stack. It does not replace the existi
 
 Agents need a scale before autonomy. Every prompt transformation should be restorable, every contradiction should be balanced or escalated, every tool argument should be constrained, and every execution should leave a receipt that can be weighed against what the agent claims.
 
+## Use
+
+```python
+from mizan import preflight, PreflightContext
+
+r = preflight(
+    "send it. cancel it.",
+    PreflightContext(contradiction_predicates=[("send", "cancel")]),
+)
+r.ok            # False — contradiction is fail-loud, not silently resolved
+r.contradiction # the conflict, surfaced for a clarifying question
+r.receipt.to_dict()  # the weighable trail (restore + balance stages)
+```
+
+Constraint-driven tool gating (the `qadiya` step):
+
+```python
+from mizan import ToolGate, equals_constraint
+
+gate = ToolGate(
+    [equals_constraint("tool", "tool_name", ["read_file", "search"])],
+    allowed_case_ids=["tool=read_file", "tool=search"],
+)
+gate.check({"tool_name": "rm_rf", "args": {}}).allowed  # False — escalated, never silently run
+```
+
+The three primitives (`jabr`, `muqabalah`, `qadiya`) are not yet on PyPI. In a dev tree, `mizan` adds local checkouts under `~/Projects` to `sys.path`; to install, run `pip install -e ../jabr -e ../muqabalah -e ../qadiya -e .`.
+
 ## Stack
 
 ```mermaid
@@ -39,14 +67,14 @@ flowchart LR
 |---|---|---|---|---|
 | Pre-LLM input integrity | [jabr](https://github.com/Moshe-ship/jabr) | restore | Reversible prompt-context restoration, 31 tests | Publish as part of one preflight package |
 | Pre-LLM input integrity | [muqabalah](https://github.com/Moshe-ship/muqabalah) | balance | Reversible cancellation and fail-loud contradiction handling, 19 tests | Share a common receipt format with the rest of the stack |
-| Pre-LLM input integrity | [qadiya](https://github.com/Moshe-ship/qadiya) | classify + dispatch | Constraint-driven case registry, 15 tests | Wire into `khwarizmi-hermes-plugin` so Hermes uses all four preflight operations |
+| Pre-LLM input integrity | [qadiya](https://github.com/Moshe-ship/qadiya) | classify + dispatch | Constraint-driven case registry, 15 tests | Done — exposed as `mizan.ToolGate` and wired into the Hermes plugin |
 | Proof it works | [case-eval](https://github.com/Moshe-ship/case-eval) | measure | 272 ambiguous prompts, deterministic and LLM-in-the-loop modes, 28 tests | Keep results reproducible and publish the key tables from fresh runs |
 | During tool selection | [mtg](https://github.com/Moshe-ship/mtg) | constrain | Morphological Type Guards for multilingual tool arguments, v0.1 advisory mode | Move from advisory diagnostics toward enforceable policy modes |
 | Post execution | [toolproof](https://github.com/Moshe-ship/toolproof) | verify | Pre-execution gating, signed receipts, 95 tests, v0.5.0 | Publish the adversarial dataset and methodology behind headline claims |
 | Benchmark | [arabic-agent-eval](https://github.com/Moshe-ship/arabic-agent-eval) | score | 51 Arabic function-calling items, 6 categories, 5 dialect variants, 22 functions | Reframe as open/installable/dialect-split, publish HF dataset and leaderboard |
 | Tool layer | [wasl](https://github.com/Moshe-ship/wasl) | connect | Arabic MCP server, 30 tools | Register and demo as the Arabic tool substrate for agents |
 | Agent runtime | [hurmoz](https://github.com/Moshe-ship/hurmoz) | operate | 63 Arabic Hermes skills | Keep as the Arabic skills layer and link the reliability stack from relevant skills |
-| Agent runtime | [khwarizmi-hermes-plugin](https://github.com/Moshe-ship/khwarizmi-hermes-plugin) | operate | Hermes preflight plugin, v0.1 PoC using `jabr` + `muqabalah` | Add `qadiya`; rename to `mizan-hermes-plugin` when stable |
+| Agent runtime | [khwarizmi-hermes-plugin](https://github.com/Moshe-ship/khwarizmi-hermes-plugin) | operate | Thin Hermes adapter over `mizan`: preflight + qadiya tool gate (all four ops) | Rename to `mizan-hermes-plugin` when stable |
 | Funnel | [artok](https://github.com/Moshe-ship/artok) | reveal | Arabic Token Tax calculator across 18 tokenizers | Publish as a Hugging Face Space and use it as top-of-funnel |
 | Method showcase | [faraid](https://github.com/Moshe-ship/faraid) | demonstrate | Working inheritance calculator plus al-Khwarizmi six-case algebra, 16 tests | Use as a precise public example of the case method |
 
@@ -79,8 +107,8 @@ Mizan is the scale those operations serve. The brand is useful only if the engin
 
 ## Honest Boundaries
 
-- This is not a monorepo yet. It is a navigation and positioning repo.
-- The Hermes plugin currently uses `jabr` and `muqabalah`; `qadiya` integration is still open work.
+- This repo now ships a small `mizan` package (the unified `preflight` and `ToolGate`); the underlying primitives still live in their own repos.
+- The Hermes plugin now runs all four operations: `jabr` + `muqabalah` via `mizan.preflight`, and `qadiya` via `mizan.ToolGate`. The tool gate is a tool-name allowlist today; richer constraints (arg scope, target sensitivity) are supported by `ToolGate` but not yet surfaced in config.
 - MTG is advisory in v0.1.0. It logs violations but does not block calls.
 - ToolProof's strongest headline claims need a published dataset and reproducible methodology before they should be used in investor/customer copy.
 - `arabic-agent-eval`, `wasl`, and `hurmoz` should avoid "first" or "largest" claims unless those claims are actively re-verified. Safer framing: open, installable, Arabic-first, dialect-aware.
