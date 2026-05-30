@@ -31,6 +31,11 @@ from mizan.receipt import (
     STAGE_RESTORE,
     STAGE_VERIFY,
 )
+from mizan.integrations import (
+    record_from_mtg,
+    record_from_toolproof,
+    constrain,
+)
 
 # Re-export the qadiya case layer (classify + dispatch) for tool gating.
 # Imported defensively so `import mizan` still works if qadiya is absent.
@@ -73,6 +78,9 @@ __all__ = [
     "STAGE_CLASSIFY",
     "STAGE_CONSTRAIN",
     "STAGE_VERIFY",
+    "record_from_mtg",
+    "record_from_toolproof",
+    "constrain",
     "__version__",
 ]
 

@@ -40,6 +40,28 @@ gate.check({"tool_name": "rm_rf", "args": {}}).allowed  # False — escalated, n
 
 The three primitives (`jabr`, `muqabalah`, `qadiya`) are not yet on PyPI. In a dev tree, `mizan` adds local checkouts under `~/Projects` to `sys.path`; to install, run `pip install -e ../jabr -e ../muqabalah -e ../qadiya -e .`.
 
+### End to end — one receipt across all five stages
+
+`mizan` folds the back half (`mtg` argument constraint, `toolproof` execution verification) into the same receipt via adapters (`constrain`, `record_from_mtg`, `record_from_toolproof`). [`examples/end_to_end.py`](examples/end_to_end.py) runs a tool call through the whole scale:
+
+```text
+=== Clean Arabic request — survives every stage ===
+ok=True  blocked_by=[]
+  [ok ] restore   jabr
+  [ok ] balance   muqabalah
+  [ok ] classify  qadiya
+  [ok ] constrain mtg
+  [ok ] verify    toolproof
+
+=== Failure path — transliteration + hallucinated claim ===
+ok=False  blocked_by=['mtg', 'toolproof']
+  [ok ] restore   jabr
+  [ok ] balance   muqabalah
+  [ok ] classify  qadiya
+  [BLOCK] constrain mtg       # "Riyadh" — Arabic argument transliterated
+  [BLOCK] verify    toolproof # claimed a tool call that never ran
+```
+
 ## Stack
 
 ```mermaid
@@ -69,8 +91,8 @@ flowchart LR
 | Pre-LLM input integrity | [muqabalah](https://github.com/Moshe-ship/muqabalah) | balance | Reversible cancellation and fail-loud contradiction handling, 19 tests | Share a common receipt format with the rest of the stack |
 | Pre-LLM input integrity | [qadiya](https://github.com/Moshe-ship/qadiya) | classify + dispatch | Constraint-driven case registry, 15 tests | Done — exposed as `mizan.ToolGate` and wired into the Hermes plugin |
 | Proof it works | [case-eval](https://github.com/Moshe-ship/case-eval) | measure | 272 ambiguous prompts, deterministic and LLM-in-the-loop modes, 28 tests | Keep results reproducible and publish the key tables from fresh runs |
-| During tool selection | [mtg](https://github.com/Moshe-ship/mtg) | constrain | Morphological Type Guards for multilingual tool arguments, v0.1 advisory mode | Move from advisory diagnostics toward enforceable policy modes |
-| Post execution | [toolproof](https://github.com/Moshe-ship/toolproof) | verify | Pre-execution gating, signed receipts, 95 tests, v0.5.0 | Publish the adversarial dataset and methodology behind headline claims |
+| During tool selection | [mtg](https://github.com/Moshe-ship/mtg) | constrain | Morphological Type Guards for multilingual tool arguments, v0.1 advisory mode. Emits a `mizan` receipt via `mizan.constrain` | Move from advisory diagnostics toward enforceable policy modes |
+| Post execution | [toolproof](https://github.com/Moshe-ship/toolproof) | verify | Pre-execution gating, signed receipts, 95 tests, v0.5.0. Emits a `mizan` receipt via `mizan.record_from_toolproof` | Publish the adversarial dataset and methodology behind headline claims |
 | Benchmark | [arabic-agent-eval](https://github.com/Moshe-ship/arabic-agent-eval) | score | 51 Arabic function-calling items, 6 categories, 5 dialect variants, 22 functions | Reframe as open/installable/dialect-split, publish HF dataset and leaderboard |
 | Tool layer | [wasl](https://github.com/Moshe-ship/wasl) | connect | Arabic MCP server, 30 tools | Register and demo as the Arabic tool substrate for agents |
 | Agent runtime | [hurmoz](https://github.com/Moshe-ship/hurmoz) | operate | 63 Arabic Hermes skills | Keep as the Arabic skills layer and link the reliability stack from relevant skills |
@@ -107,7 +129,8 @@ Mizan is the scale those operations serve. The brand is useful only if the engin
 
 ## Honest Boundaries
 
-- This repo now ships a small `mizan` package (the unified `preflight` and `ToolGate`); the underlying primitives still live in their own repos.
+- This repo now ships a small `mizan` package (`preflight`, `ToolGate`, and the `mtg`/`toolproof` receipt adapters); the underlying primitives still live in their own repos.
+- The full pipeline (restore → balance → classify → constrain → verify) chains into one `Receipt`; see `examples/end_to_end.py`. `mtg`/`toolproof` are optional imports — the adapters accept native results, so `mizan` installs without them.
 - The Hermes plugin now runs all four operations: `jabr` + `muqabalah` via `mizan.preflight`, and `qadiya` via `mizan.ToolGate`. The tool gate is a tool-name allowlist today; richer constraints (arg scope, target sensitivity) are supported by `ToolGate` but not yet surfaced in config.
 - MTG is advisory in v0.1.0. It logs violations but does not block calls.
 - ToolProof's strongest headline claims need a published dataset and reproducible methodology before they should be used in investor/customer copy.
