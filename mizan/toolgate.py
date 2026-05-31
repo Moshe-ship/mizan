@@ -18,13 +18,18 @@ from typing import Any, Callable, Mapping, Sequence
 
 from mizan.receipt import StageRecord, STAGE_CLASSIFY
 
-from qadiya import (
-    CaseRegistry,
-    Constraint,
-    Dispatch,
-    DispatchOutcome,
-    NoMatchingCase,
-)
+try:
+    from qadiya import (
+        CaseRegistry,
+        Constraint,
+        Dispatch,
+        DispatchOutcome,
+        NoMatchingCase,
+    )
+except ImportError as _exc:  # pragma: no cover - exercised only without primitives
+    from mizan._primitives import missing_primitive
+
+    raise missing_primitive("qadiya", "toolgate") from _exc
 
 # Sentinel value any membership constraint folds unlisted values into, so the
 # constraint stays total (every input maps to a declared value).

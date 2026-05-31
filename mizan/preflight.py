@@ -39,12 +39,17 @@ for _name in ("jabr", "muqabalah", "qadiya"):
     if _candidate.is_dir() and str(_candidate) not in sys.path:
         sys.path.insert(0, str(_candidate))
 
-from jabr import restore, RestorationContext  # noqa: E402
-from muqabalah import (  # noqa: E402
-    balance,
-    CancellationContext,
-    CancellationConflict,
-)
+try:
+    from jabr import restore, RestorationContext  # noqa: E402
+    from muqabalah import (  # noqa: E402
+        balance,
+        CancellationContext,
+        CancellationConflict,
+    )
+except ImportError as _exc:  # pragma: no cover - exercised only without primitives
+    from mizan._primitives import missing_primitive
+
+    raise missing_primitive(_exc.name or "jabr", "preflight") from _exc
 
 # jabr annotates resolved spans with an inline tag: e.g. ``her[[jabr:1a2b]]``.
 _JABR_TAG = re.compile(r"\[\[jabr:[0-9a-f]+\]\]")

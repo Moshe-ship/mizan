@@ -16,12 +16,6 @@ the shared :class:`Receipt` is the one audit format every stage appends to.
 
 from __future__ import annotations
 
-from mizan.preflight import (
-    PreflightContext,
-    PreflightResult,
-    preflight,
-    strip_tags,
-)
 from mizan.receipt import (
     Receipt,
     StageRecord,
@@ -83,7 +77,41 @@ try:
 except Exception:  # noqa: BLE001
     _HAS_MCPSCAN = False
 
-__version__ = "0.1.0"
+# Version comes from installed package metadata so it never drifts from
+# pyproject.toml. Falls back when running from an uninstalled source tree.
+try:
+    from importlib.metadata import version as _pkg_version, PackageNotFoundError
+
+    __version__ = _pkg_version("mizan")
+except PackageNotFoundError:  # pragma: no cover - source tree without install
+    __version__ = "0.0.0+source"
+
+# The preflight (jabr/muqabalah) layer is imported lazily so that `import
+# mizan` and the standalone mizan.mcpscan scanner work WITHOUT the
+# not-yet-published primitive packages. Accessing a preflight symbol triggers
+# the import and, if a primitive is missing, raises a friendly
+# MissingPrimitiveError (see mizan._primitives) instead of a bare ImportError.
+_LAZY_PREFLIGHT = {"preflight", "PreflightContext", "PreflightResult", "strip_tags"}
+
+
+def __getattr__(name: str):
+    if name in _LAZY_PREFLIGHT:
+        import importlib
+
+        module = importlib.import_module("mizan.preflight")
+        # Bind ALL preflight symbols at once. Importing the submodule makes the
+        # import system bind `mizan.preflight` to the *module*; we must rebind
+        # `preflight` to the *function* regardless of which name triggered this,
+        # or a later `from mizan import preflight` would get a non-callable module.
+        for _sym in _LAZY_PREFLIGHT:
+            globals()[_sym] = getattr(module, _sym)
+        return globals()[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted(set(globals()) | _LAZY_PREFLIGHT)
+
 
 __all__ = [
     "preflight",

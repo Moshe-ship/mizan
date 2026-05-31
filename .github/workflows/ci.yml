@@ -42,3 +42,37 @@ jobs:
         run: python -m pip install -e ".[test,otel]"
       - name: Run tests
         run: python -m pytest -q
+
+  scanner-standalone:
+    # Proves the README promise: `pip install mizan` gives a working scanner
+    # with NO primitives installed. Guards the regression where __init__
+    # eagerly imported preflight -> jabr and broke every import for pip users.
+    name: Scanner works without primitives
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install ONLY mizan (no primitives, no extras)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - name: Scanner imports and runs; preflight fails friendly
+        run: |
+          python - <<'PY'
+          import mizan
+          from mizan.mcpscan import scan_tool, decide, report, ScanConfig
+          res = scan_tool({"name": "t", "description": "hi ‮ reversed"})
+          assert "BIDI" in report(res), "scanner should flag the BiDi threat"
+          print("scanner OK, mizan", mizan.__version__)
+
+          # preflight must raise a friendly MissingPrimitiveError, not a bare ImportError
+          from mizan._primitives import MissingPrimitiveError
+          try:
+              from mizan import preflight  # triggers lazy jabr import
+              raise SystemExit("expected MissingPrimitiveError, preflight imported")
+          except MissingPrimitiveError as e:
+              assert "git+https://github.com/Moshe-ship/jabr.git" in str(e)
+              print("friendly error OK:", str(e).splitlines()[0])
+          PY

@@ -115,7 +115,19 @@ gate = ToolGate(
 gate.check({"tool_name": "rm_rf", "args": {}}).allowed  # False — escalated, never silently run
 ```
 
-The three primitives (`jabr`, `muqabalah`, `qadiya`) are not yet on PyPI. In a dev tree, `mizan` adds local checkouts under `~/Projects` to `sys.path`; to install, run `pip install -e ../jabr -e ../muqabalah -e ../qadiya -e .`.
+The three primitives (`jabr`, `muqabalah`, `qadiya`) are not yet on PyPI, so
+`preflight` and the tool gate are **not** available from a bare `pip install mizan`
+— calling them without the primitives raises a clear error telling you to install
+them. Install from git:
+
+```bash
+pip install git+https://github.com/Moshe-ship/jabr.git \
+            git+https://github.com/Moshe-ship/muqabalah.git \
+            git+https://github.com/Moshe-ship/qadiya.git
+```
+
+Or, in a dev tree (`mizan` adds local checkouts under `~/Projects` to `sys.path`),
+run `pip install -e ../jabr -e ../muqabalah -e ../qadiya -e .`.
 
 ### End to end — one receipt across all five stages
 
