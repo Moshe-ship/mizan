@@ -19,26 +19,16 @@ keywords = ["ai", "agents", "reliability", "arabic", "tool-calling", "preflight"
 # fallback, so it imports in a dev tree without an install step.
 dependencies = []
 
-# The primitives are not yet on PyPI, so they are optional extras installed
-# from git. In a dev tree mizan also adds local checkouts under ~/Projects to
+# PyPI forbids direct-URL (git+https) dependencies, so the primitives
+# (jabr/muqabalah/qadiya/mtg/toolproof) are NOT declared as extras here — they
+# are not yet on PyPI. Install them manually from git, or editable from a dev
+# tree (see README). mizan also adds local checkouts under ~/Projects to
 # sys.path as a fallback, so it imports without an install step.
+# Only PyPI-installable extras are declared below.
 [project.optional-dependencies]
 test = ["pytest>=7"]
-preflight = [
-    "jabr @ git+https://github.com/Moshe-ship/jabr.git",
-    "muqabalah @ git+https://github.com/Moshe-ship/muqabalah.git",
-    "qadiya @ git+https://github.com/Moshe-ship/qadiya.git",
-]
 mcpscan = []  # no deps — detectors are vendored; bare `pip install mizan` runs the scanner
-verify = ["toolproof @ git+https://github.com/Moshe-ship/toolproof.git"]
 otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
-all = [
-    "jabr @ git+https://github.com/Moshe-ship/jabr.git",
-    "muqabalah @ git+https://github.com/Moshe-ship/muqabalah.git",
-    "qadiya @ git+https://github.com/Moshe-ship/qadiya.git",
-    "mtg @ git+https://github.com/Moshe-ship/mtg.git",
-    "toolproof @ git+https://github.com/Moshe-ship/toolproof.git",
-]
 
 [tool.setuptools]
 packages = ["mizan"]
