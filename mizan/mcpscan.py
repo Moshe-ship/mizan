@@ -118,6 +118,31 @@ def _rule_bidi(text: str) -> list[Finding]:
     return out
 
 
+# Zero-width joiner/non-joiner used to break up a word. These are legitimate
+# in Arabic/Persian/Indic typography, so only flag when they sit *between
+# Latin/ASCII letters* — where they have no legitimate use and are obfuscation.
+_JOINERS = {"‌", "‍"}  # ZWNJ, ZWJ
+
+
+def _is_latin_letter(c: str) -> bool:
+    return c.isascii() and c.isalpha()
+
+
+def _rule_zwnj(text: str) -> list[Finding]:
+    for i, ch in enumerate(text):
+        if ch in _JOINERS:
+            prev = text[i - 1] if i > 0 else ""
+            nxt = text[i + 1] if i + 1 < len(text) else ""
+            if _is_latin_letter(prev) and _is_latin_letter(nxt):
+                return [Finding(
+                    "R-ZWNJ-001", "invisible", "high",
+                    "Zero-width joiner used to split a Latin-script word — obfuscation (no legitimate use between ASCII letters).",
+                    evidence=f"{prev!r}{'U+%04X' % ord(ch)}{nxt!r}",
+                    remediation="Strip ZWNJ/ZWJ (U+200C/U+200D) from Latin tokens in tool metadata. Leave Arabic/Persian text untouched.",
+                )]
+    return []
+
+
 def _rule_homoglyph(text: str) -> list[Finding]:
     a = uts39_analyze(text)
     b = detect_bidi_threats(text)
@@ -211,7 +236,7 @@ def _rule_override(text: str) -> list[Finding]:
 
 
 RULES: list[Callable[[str], list[Finding]]] = [
-    _rule_bidi, _rule_homoglyph, _rule_arabizi,
+    _rule_bidi, _rule_zwnj, _rule_homoglyph, _rule_arabizi,
     _rule_codeswitch, _rule_semantic, _rule_override,
 ]
 
@@ -341,10 +366,13 @@ _SPACED_RUN = re.compile(r"(?:\b\w ){2,}\b\w\b")
 
 
 def _despace(text: str) -> str:
-    # Protect multi-space (word separators) so collapsing single-space letter
-    # runs does not merge separate words.
+    # Treat ALL whitespace consistently: 2+ whitespace = word boundary
+    # (protected), single whitespace (space/tab/etc.) = potential letter
+    # separator. Multi-char tokens still act as word boundaries, so we never
+    # merge real words.
     sentinel = "\x00"
-    t = re.sub(r" {2,}", sentinel, text)
+    t = re.sub(r"\s{2,}", sentinel, text)
+    t = re.sub(r"[^\S\n]", " ", t)  # remaining single whitespace -> space (keep newlines)
     t = _SPACED_RUN.sub(lambda m: m.group(0).replace(" ", ""), t)
     return t.replace(sentinel, " ")
 

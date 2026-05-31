@@ -20,7 +20,8 @@ from mizan import scan_tool  # noqa: E402
 
 def main() -> None:
     fname = sys.argv[1] if len(sys.argv) > 1 else "held_out.jsonl"
-    held = Path(__file__).with_name(fname)
+    p = Path(fname)
+    held = p if p.is_absolute() else Path(__file__).with_name(fname)
     cases = [json.loads(l) for l in held.read_text().splitlines() if l.strip()]
     print(f"[{fname}]")
     poison = [c for c in cases if c["label"] == "poison"]
