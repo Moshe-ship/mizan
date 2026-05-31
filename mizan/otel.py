@@ -29,17 +29,25 @@ _OP_NAME = {
 }
 
 
-def receipt_to_spans(receipt: Receipt, *, secret: Optional[str] = None) -> list[dict[str, Any]]:
+def receipt_to_spans(
+    receipt: Receipt, *, secret: Optional[str] = None, key_id: Optional[str] = None
+) -> list[dict[str, Any]]:
     """Return OTel-shaped span dicts: one parent + one child per stage.
 
-    Attribute names use `gen_ai.*` where the GenAI conventions apply and
-    `mizan.*` for the reliability-specific signal. If `secret` is given, the
-    parent span carries `mizan.receipt.signature` (HMAC) — the tamper-evidence
-    layer OTel lacks.
+    Attribute names use `gen_ai.*` where the GenAI conventions apply, and
+    `mizan.*` for the reliability-specific signal — including
+    `mizan.operation.name`, which preserves Mizan's exact stage semantics
+    even where `gen_ai.operation.name` is an approximate ride (e.g.
+    classify/constrain → `gen_ai.execute_tool`).
+
+    If `secret` is given, the parent span carries `mizan.receipt.signature`
+    (HMAC) plus `sig_alg` and an optional `key_id` so a verifier knows which
+    key signed it — the tamper-evidence layer OTel lacks.
     """
     parent_id = "mizan.pipeline"
     parent_attrs: dict[str, Any] = {
         "gen_ai.operation.name": "mizan.pipeline",
+        "mizan.operation.name": "mizan.pipeline",
         "mizan.receipt.ok": receipt.ok,
         "mizan.receipt.blocked_by": list(receipt.blocked_by),
         "mizan.receipt.stage_count": len(receipt.stages),
@@ -47,6 +55,8 @@ def receipt_to_spans(receipt: Receipt, *, secret: Optional[str] = None) -> list[
     if secret is not None:
         parent_attrs["mizan.receipt.signature"] = receipt.signature(secret)
         parent_attrs["mizan.receipt.sig_alg"] = "HMAC-SHA256"
+        if key_id is not None:
+            parent_attrs["mizan.receipt.key_id"] = key_id
 
     parent = {
         "name": "mizan.pipeline",
@@ -62,6 +72,7 @@ def receipt_to_spans(receipt: Receipt, *, secret: Optional[str] = None) -> list[
     for i, s in enumerate(receipt.stages):
         attrs: dict[str, Any] = {
             "gen_ai.operation.name": _OP_NAME.get(s.stage, f"mizan.{s.stage}"),
+            "mizan.operation.name": f"mizan.{s.stage}",  # exact Mizan semantics
             "mizan.stage": s.stage,
             "mizan.tool": s.tool,
             "mizan.stage.ok": s.ok,
@@ -98,10 +109,28 @@ def _flatten(detail: Any, prefix: str = "mizan.detail") -> dict[str, Any]:
     return out
 
 
-def emit(receipt: Receipt, tracer: Any = None, *, secret: Optional[str] = None) -> list[dict[str, Any]]:
+def _error_status() -> Any:
+    """Return an OTel ERROR Status when the SDK is present, else a marker
+    string (so a fake tracer in tests can still observe the error)."""
+    try:
+        from opentelemetry.trace import Status, StatusCode  # type: ignore
+
+        return Status(StatusCode.ERROR)
+    except Exception:  # noqa: BLE001
+        return "ERROR"
+
+
+def emit(
+    receipt: Receipt, tracer: Any = None, *, secret: Optional[str] = None,
+    key_id: Optional[str] = None,
+) -> list[dict[str, Any]]:
     """Emit real OTel spans if a tracer (or the SDK) is available; always
-    returns the span dicts. No-op-safe when the SDK is absent."""
-    spans = receipt_to_spans(receipt, secret=secret)
+    returns the span dicts. No-op-safe when the SDK is absent.
+
+    Failed stages get a real ``Status(StatusCode.ERROR)`` set on the span —
+    not only attributes — so backends actually surface them as errors.
+    """
+    spans = receipt_to_spans(receipt, secret=secret, key_id=key_id)
     if tracer is None:
         try:
             from opentelemetry import trace  # type: ignore
@@ -110,15 +139,20 @@ def emit(receipt: Receipt, tracer: Any = None, *, secret: Optional[str] = None) 
         except Exception:  # noqa: BLE001
             return spans  # SDK not installed — return the mapping only
 
-    # Parent then children, preserving nesting.
+    err = _error_status()
+
+    def _apply(span: Any, sd: dict[str, Any]) -> None:
+        for k, v in sd["attributes"].items():
+            span.set_attribute(k, v)
+        for ev in sd.get("events", []):
+            span.add_event(ev["name"], attributes=ev["attributes"])
+        if sd["status"] == "ERROR":
+            span.set_status(err)
+
     parent = spans[0]
     with tracer.start_as_current_span(parent["name"]) as ps:
-        for k, v in parent["attributes"].items():
-            ps.set_attribute(k, v)
+        _apply(ps, parent)
         for child in spans[1:]:
             with tracer.start_as_current_span(child["name"]) as cs:
-                for k, v in child["attributes"].items():
-                    cs.set_attribute(k, v)
-                for ev in child["events"]:
-                    cs.add_event(ev["name"], attributes=ev["attributes"])
+                _apply(cs, child)
     return spans

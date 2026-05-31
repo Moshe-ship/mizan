@@ -132,14 +132,16 @@ flowchart LR
 ## Pipeline
 
 ```text
-input
-  -> restore missing context                 jabr
-  -> balance duplication and contradictions  muqabalah
-  -> classify into explicit cases            qadiya
-  -> dispatch registered procedure           qadiya
-  -> constrain multilingual tool arguments   mtg
-  -> gate, execute, verify, and sign         toolproof
-  -> score and publish evidence              case-eval + arabic-agent-eval
+tool surface
+  -> scan for multilingual/Unicode poisoning  mizan.mcpscan
+user input
+  -> restore missing context                  jabr
+  -> balance duplication and contradictions   muqabalah
+  -> classify + dispatch into explicit cases   qadiya
+  -> constrain multilingual tool arguments     mtg
+  -> execute, verify, and sign the receipt     toolproof + mizan.Receipt
+  -> export OTel-compatible spans              mizan.otel
+  -> score and publish evidence                case-eval + arabic-agent-eval
 ```
 
 ## Why It Is Called Mizan
