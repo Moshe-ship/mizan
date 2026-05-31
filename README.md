@@ -1,5 +1,10 @@
 # Mizan ميزان
 
+[![PyPI](https://img.shields.io/pypi/v/mizan)](https://pypi.org/project/mizan/)
+[![Python](https://img.shields.io/pypi/pyversions/mizan)](https://pypi.org/project/mizan/)
+[![CI](https://github.com/Moshe-ship/mizan/actions/workflows/ci.yml/badge.svg)](https://github.com/Moshe-ship/mizan/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/pypi/l/mizan)](LICENSE)
+
 **The reliability scale for AI agents.**
 
 Restore the prompt, balance contradictions, classify the case, constrain the arguments, verify the execution, then weigh the evidence.
@@ -37,7 +42,10 @@ print(report(res))                                    # rule ID, severity, evide
 print(decide(res, ScanConfig(mode="audit")).action)   # audit / warn / block
 ```
 
-Working from a repo checkout instead? The CLI scans a JSON file of tool descriptors directly:
+Working from a repo checkout instead? The CLI scans a JSON file of tool descriptors directly
+(runnable examples — JSON corpora and end-to-end scripts — live in
+[`examples/`](https://github.com/Moshe-ship/mizan/tree/main/examples) in the repo, not in the
+installed wheel):
 
 ```bash
 python -m mizan.mcpscan examples/mcp_tools_poisoned.json --mode audit
