@@ -37,6 +37,7 @@ from mizan.integrations import (
     record_from_toolproof,
     constrain,
 )
+from mizan.otel import receipt_to_spans, emit as emit_otel
 
 # Re-export the qadiya case layer (classify + dispatch) for tool gating.
 # Imported defensively so `import mizan` still works if qadiya is absent.
@@ -100,6 +101,8 @@ __all__ = [
     "record_from_mtg",
     "record_from_toolproof",
     "constrain",
+    "receipt_to_spans",
+    "emit_otel",
     "__version__",
 ]
 

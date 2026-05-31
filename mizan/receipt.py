@@ -91,3 +91,20 @@ class Receipt:
 
     def to_json(self, **kwargs: Any) -> str:
         return json.dumps(self.to_dict(), ensure_ascii=False, **kwargs)
+
+    def _canonical(self) -> bytes:
+        # Stable byte form for signing: sorted keys, no whitespace variance.
+        return json.dumps(self.to_dict(), ensure_ascii=False, sort_keys=True).encode("utf-8")
+
+    def signature(self, secret: str) -> str:
+        """HMAC-SHA256 over the canonical receipt — tamper-evidence that
+        OpenTelemetry spans do not provide. Mizan-specific by design."""
+        import hashlib
+        import hmac
+
+        return hmac.new(secret.encode("utf-8"), self._canonical(), hashlib.sha256).hexdigest()
+
+    def verify_signature(self, secret: str, sig: str) -> bool:
+        import hmac
+
+        return hmac.compare_digest(self.signature(secret), sig)

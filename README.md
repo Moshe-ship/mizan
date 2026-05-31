@@ -43,6 +43,17 @@ code-switch, and (advisory) semantic-exfiltration vectors. Structural findings a
 intent, since legitimate security tools mention these terms). Also a CLI:
 `python -m mizan.mcpscan tools.json --mode audit`.
 
+Export any receipt as OpenTelemetry-compatible spans (interop) with a signed receipt (the tamper-evidence OTel lacks):
+
+```python
+from mizan import receipt_to_spans
+spans = receipt_to_spans(result.receipt, secret="…")   # one parent + one span per stage
+spans[0]["attributes"]["mizan.receipt.signature"]        # HMAC-SHA256 over the canonical receipt
+# emit_otel(receipt, secret="…")  # pushes real spans if `pip install mizan[otel]`
+```
+
+See `examples/otel_trace.py` for a full scan → preflight → gate → constrain → verify trace.
+
 Constraint-driven tool gating (the `qadiya` step):
 
 ```python
@@ -169,13 +180,12 @@ Every repo should have one job:
 
 ## Status & next moves
 
-Done: preflight (all four ops) wired into the Hermes plugin · `arabic-agent-eval` published as a HF dataset + static leaderboard · receipts chained across `jabr`/`muqabalah`/`qadiya`/`mtg`/`toolproof` (`examples/end_to_end.py`) · `hurmoz`/plugin/`wasl` submitted to `awesome-hermes-agent` · `mizan.mcpscan` shipped with the labeled corpus eval.
+Done: preflight (all four ops) wired into the Hermes plugin · `arabic-agent-eval` published as a HF dataset + static leaderboard · receipts chained across `jabr`/`muqabalah`/`qadiya`/`mtg`/`toolproof` (`examples/end_to_end.py`) · `hurmoz`/plugin/`wasl` submitted to `awesome-hermes-agent` · `mizan.mcpscan` shipped with the labeled corpus eval + Hermes plugin audit mode · `mizan.otel` exports receipts as OTel-compatible spans with HMAC signatures.
 
 Next:
-1. Wire `mizan.mcpscan` into the Hermes plugin (audit mode) so tools are scanned at registration.
-2. `mizan.otel` — export the `Receipt` as OpenTelemetry GenAI spans (interop) while keeping signed receipts (the gap OTel lacks).
-3. Expand the poisoning corpus with held-out adversarial cases, and run the real `mcp-scan` for the generic-scanner comparison column.
-4. `arabic-agent-eval` v2: format-instruction adherence, a code-switch split, and outcome/policy-level scoring.
+1. Expand the poisoning corpus with **held-out** adversarial cases (built after the rules are frozen), and run the real `mcp-scan` for the generic-scanner comparison column.
+2. `arabic-agent-eval` v2: format-instruction adherence, a code-switch split, and outcome/policy-level scoring.
+3. Eventually: real PyPI versions (or vendoring) for `jabr`/`muqabalah`/`qadiya`/`mtg` instead of git extras; a formal receipt spec once the shape is stable.
 
 ## One-Line Pitch
 

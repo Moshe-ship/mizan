@@ -31,6 +31,7 @@ preflight = [
 ]
 mcpscan = ["mtg @ git+https://github.com/Moshe-ship/mtg.git"]
 verify = ["toolproof @ git+https://github.com/Moshe-ship/toolproof.git"]
+otel = ["opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20"]
 all = [
     "jabr @ git+https://github.com/Moshe-ship/jabr.git",
     "muqabalah @ git+https://github.com/Moshe-ship/muqabalah.git",
