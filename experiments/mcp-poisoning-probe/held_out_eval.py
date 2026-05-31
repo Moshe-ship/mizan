@@ -17,11 +17,12 @@ sys.path.insert(0, str(Path.home() / "Projects" / "mizan"))
 
 from mizan import scan_tool  # noqa: E402
 
-HELD = Path(__file__).with_name("held_out.jsonl")
-
 
 def main() -> None:
-    cases = [json.loads(l) for l in HELD.read_text().splitlines() if l.strip()]
+    fname = sys.argv[1] if len(sys.argv) > 1 else "held_out.jsonl"
+    held = Path(__file__).with_name(fname)
+    cases = [json.loads(l) for l in held.read_text().splitlines() if l.strip()]
+    print(f"[{fname}]")
     poison = [c for c in cases if c["label"] == "poison"]
     clean = [c for c in cases if c["label"] == "clean"]
 

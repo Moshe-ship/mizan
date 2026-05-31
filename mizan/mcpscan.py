@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -46,12 +46,14 @@ class Finding:
     message: str
     evidence: str            # short snippet / codepoints that triggered the rule
     remediation: str
+    field: str = ""          # provenance: which surface (name/description/param:x/cross-field/normalized)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "rule_id": self.rule_id,
             "family": self.family,
             "severity": self.severity,
+            "field": self.field,
             "message": self.message,
             "evidence": self.evidence[:120],
             "remediation": self.remediation,
@@ -74,8 +76,18 @@ _EXFIL_AR = [
     "تجاهل التعليمات", "تجاهل كل", "صدّر البيانات", "أرسل كل",
     "تجاوز الموافقة", "نفّذ هذا الأمر",
 ]
-# Arabic imperative verbs commonly heading an injected directive.
-_AR_DIRECTIVE = ["أرسل", "احذف", "تجاهل", "صدّر", "نفّذ", "شغّل", "اقرأ"]
+# Arabic imperative verbs that head an injected directive, split by how
+# dangerous the verb itself is. A dangerous verb in mixed-script metadata is
+# high on its own; a "soft" verb (read) needs a danger signal nearby — else a
+# legitimate "اقرأ الوثائق / read the docs" instruction would be blocked.
+_AR_DIRECTIVE_DANGEROUS = ["أرسل", "احذف", "صدّر", "نفّذ", "شغّل", "تجاهل"]
+_AR_DIRECTIVE_SOFT = ["اقرأ", "حمّل", "اعرض"]
+_AR_DIRECTIVE = _AR_DIRECTIVE_DANGEROUS + _AR_DIRECTIVE_SOFT
+# Danger signals that turn a soft directive into a real exfiltration concern.
+_DANGER_SIGNAL = re.compile(
+    r"https?://|\.ssh|id_rsa|secret|token|password|credential|/etc/|إلى\s+http|خارج|الخادم|endpoint",
+    re.IGNORECASE,
+)
 
 
 def _snip(text: str, n: int = 60) -> str:
@@ -132,15 +144,30 @@ def _rule_arabizi(text: str) -> list[Finding]:
 
 
 def _rule_codeswitch(text: str) -> list[Finding]:
-    script = str(detect_script(text))
-    has_ar_directive = any(kw in text for kw in _AR_DIRECTIVE)
-    if script == "mixed" and has_ar_directive:
-        hit = next(kw for kw in _AR_DIRECTIVE if kw in text)
+    if str(detect_script(text)) != "mixed":
+        return []
+    danger = bool(_DANGER_SIGNAL.search(text))
+    dangerous_hit = next((kw for kw in _AR_DIRECTIVE_DANGEROUS if kw in text), None)
+    soft_hit = next((kw for kw in _AR_DIRECTIVE_SOFT if kw in text), None)
+
+    # Dangerous directive (send/delete/export/run/ignore), OR a soft directive
+    # (read) paired with a danger signal (URL/secret/exfil target) → high.
+    if dangerous_hit or (soft_hit and danger):
+        hit = dangerous_hit or soft_hit
         return [Finding(
             "R-CODESWITCH-001", "codeswitch", "high",
-            "Arabic imperative directive embedded in otherwise-English metadata (code-switched injection).",
-            evidence=f"script=mixed; ar_directive={hit!r}",
-            remediation="Scan non-Latin spans for directives independently; do not assume English-only metadata.",
+            "Arabic exfiltration/destructive directive embedded in mixed-script metadata.",
+            evidence=f"script=mixed; ar_directive={hit!r}; danger={danger}",
+            remediation="Scan non-Latin spans for directives; do not assume English-only metadata.",
+        )]
+    # Soft directive with no danger signal (e.g. legitimate "read the docs") →
+    # advisory only, so normal Arabic instructions are not blocked.
+    if soft_hit:
+        return [Finding(
+            "R-CODESWITCH-002", "codeswitch", "medium",
+            "Arabic imperative in mixed-script metadata, no exfiltration signal (advisory — likely legitimate).",
+            evidence=f"script=mixed; soft_directive={soft_hit!r}",
+            remediation="Review only; legitimate bilingual docs commonly contain Arabic imperatives.",
         )]
     return []
 
@@ -296,24 +323,68 @@ def report(result: "ScanResult") -> str:
     return "\n".join(lines)
 
 
-def _tool_text(tool: Mapping[str, Any]) -> str:
-    """Flatten the scannable surface of an MCP tool descriptor."""
-    parts = [str(tool.get("name", "")), str(tool.get("description", ""))]
+def _fields(tool: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """Scannable surfaces of an MCP tool, with provenance labels."""
+    out = [("name", str(tool.get("name", ""))), ("description", str(tool.get("description", "")))]
     schema = tool.get("input_schema") or tool.get("inputSchema") or {}
     props = (schema or {}).get("properties", {}) if isinstance(schema, dict) else {}
-    for pname, pspec in (props.items() if isinstance(props, dict) else []):
-        parts.append(str(pname))
-        if isinstance(pspec, dict):
-            parts.append(str(pspec.get("description", "")))
-    return "\n".join(p for p in parts if p)
+    if isinstance(props, dict):
+        for pname, pspec in props.items():
+            desc = pspec.get("description", "") if isinstance(pspec, dict) else ""
+            out.append((f"param:{pname}", f"{pname} {desc}".strip()))
+    return [(n, t) for n, t in out if t]
+
+
+# Spaced-out evasion ("i g n o r e   a l l"). Treat 2+ spaces as a word
+# boundary and collapse runs of >=3 single-char tokens joined by single spaces.
+_SPACED_RUN = re.compile(r"(?:\b\w ){2,}\b\w\b")
+
+
+def _despace(text: str) -> str:
+    # Protect multi-space (word separators) so collapsing single-space letter
+    # runs does not merge separate words.
+    sentinel = "\x00"
+    t = re.sub(r" {2,}", sentinel, text)
+    t = _SPACED_RUN.sub(lambda m: m.group(0).replace(" ", ""), t)
+    return t.replace(sentinel, " ")
 
 
 def scan_tool(tool: Mapping[str, Any]) -> ScanResult:
-    """Scan one MCP tool descriptor for poisoning across all rule families."""
-    text = _tool_text(tool)
+    """Scan one MCP tool descriptor across all rule families.
+
+    Three passes: (1) per-field with provenance; (2) holistic space-joined to
+    catch payloads split *across* fields; (3) normalized (de-spaced) to catch
+    whitespace evasion. Findings new in passes 2-3 are downgraded to medium
+    (lower confidence) and tagged with their field provenance.
+    """
+    fields = _fields(tool)
     findings: list[Finding] = []
-    for rule in RULES:
-        findings.extend(rule(text))
+    fired: set[str] = set()
+
+    # 1) per-field (high confidence, exact provenance)
+    for fname, text in fields:
+        for rule in RULES:
+            for f in rule(text):
+                findings.append(replace(f, field=fname))
+                fired.add(f.rule_id)
+
+    def _extra_pass(text: str, label: str) -> None:
+        for rule in RULES:
+            for f in rule(text):
+                if f.rule_id not in fired:
+                    sev = "medium" if f.severity == "high" else f.severity
+                    findings.append(replace(f, field=label, severity=sev))
+                    fired.add(f.rule_id)
+
+    # 2) holistic cross-field
+    holistic = " ".join(t for _, t in fields)
+    _extra_pass(holistic, "cross-field")
+
+    # 3) normalized (de-spaced) — only if it changed the text
+    norm = _despace(holistic)
+    if norm != holistic:
+        _extra_pass(norm, "normalized")
+
     return ScanResult(tool_name=str(tool.get("name", "")), findings=tuple(findings))
 
 

@@ -47,7 +47,7 @@ make semantic rules advisory: they warn, they do not block.
 4. **Decode-and-rescan** for base64/leet so detection is intentional, not incidental.
 5. **Negation-aware** semantic rule ("never reads", "does not send").
 
-## Honest headline
+## Honest headline (v1)
 
 Mizan's structural Unicode rules (BiDi, homoglyph) generalize well and scan
 parameter surfaces, not just descriptions. The semantic and code-switch rules
@@ -55,3 +55,46 @@ do **not** yet generalize: they miss obfuscation and over-flag legitimate
 Arabic instructions. Recall on novel attacks is **~75%**, with one blocking
 false positive per ten clean tools — usable in audit/warn mode, **not** ready
 for default-block.
+
+---
+
+## v1 fixes applied (guided by failure category, not the exact cases)
+
+- **R-CODESWITCH split**: dangerous Arabic verbs (send/delete/export/run/ignore)
+  → high; a soft verb (read) alone → `R-CODESWITCH-002` medium advisory. Fixes
+  the brand-damaging "read the docs" hard FP.
+- **Cross-field scan**: scan each field with provenance, then a holistic
+  space-joined pass; payloads split across fields surface as `field=cross-field`
+  at medium.
+- **Normalization**: de-space runs of single-char letters (multi-space = word
+  boundary) → catches `i g n o r e   a l l` at medium (`field=normalized`).
+
+v1 regression (now a *seen* set): recall 8/8, hard-FP 0/10, advisories 3/10.
+
+## v2 — fresh held-out (authored AFTER the fixes; the real generalization number)
+
+`held_out_v2.py`, 15 new cases. `python held_out_eval.py held_out_v2.jsonl`:
+
+    recall 5/8  |  hard false-positives 0/7  |  advisories 1/7
+
+- **Caught:** homoglyph-domain (Cyrillic in URL), RTL isolate, Arabic destructive
+  directive in a *param*, exfil instruction in a *param*, fullwidth-char leet.
+- **Missed (new gaps):**
+  - `zwnj-between-letters` — `mtg` deliberately does **not** flag ZWNJ (U+200C);
+    it's legitimate in Arabic/Persian typography, so flagging it risks FPs. Needs
+    a context-aware rule (ZWNJ between *Latin* letters = suspicious).
+  - `tab-spaced` — normalization handles spaces, not tabs/other whitespace.
+  - `synonym-exfil` ("transmit … to an outside host") — vocabulary gap.
+- **Advisory FP (1):** a legit `secret_key` param raised a cross-field medium —
+  the price of the holistic pass; medium/warn, never blocks.
+
+### Honest standing
+Across **two** held-out sets, after fixes: **0 hard false positives** (strong FP
+discipline) and **~63% recall on genuinely novel attacks**. Structural Unicode +
+schema scanning generalize; obfuscation (ZWNJ, tabs, synonyms) and semantic
+coverage are partial. Conclusion unchanged: **audit/warn yes, default-block no.**
+
+### v2 roadmap
+Extend normalization to all whitespace · context-aware ZWNJ/joiner rule ·
+broaden semantic vocabulary (transmit/forward/relay + outside/external host),
+kept at medium.

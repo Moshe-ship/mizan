@@ -185,7 +185,7 @@ Every repo should have one job:
 Done: preflight (all four ops) wired into the Hermes plugin · `arabic-agent-eval` published as a HF dataset + static leaderboard · receipts chained across `jabr`/`muqabalah`/`qadiya`/`mtg`/`toolproof` (`examples/end_to_end.py`) · `hurmoz`/plugin/`wasl` submitted to `awesome-hermes-agent` · `mizan.mcpscan` shipped with the labeled corpus eval + Hermes plugin audit mode · `mizan.otel` exports receipts as OTel-compatible spans with HMAC signatures.
 
 Next:
-1. Expand the poisoning corpus with **held-out** adversarial cases (built after the rules are frozen), and run the real `mcp-scan` for the generic-scanner comparison column.
+1. Harden `mcpscan` against v2 held-out gaps (ZWNJ/joiner, tab-spacing, semantic vocabulary), then author a fresh v3 set. Held-out generalization so far: ~63% recall on novel attacks, **0 hard false positives** across two sets (audit/warn-ready, not default-block). Run the real `mcp-scan` for the generic-scanner comparison when a public claim is wanted.
 2. `arabic-agent-eval` v2: format-instruction adherence, a code-switch split, and outcome/policy-level scoring.
 3. Eventually: real PyPI versions (or vendoring) for `jabr`/`muqabalah`/`qadiya`/`mtg` instead of git extras; a formal receipt spec once the shape is stable.
 
