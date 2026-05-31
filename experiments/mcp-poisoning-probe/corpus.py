@@ -79,6 +79,15 @@ NEGATIVES = [
     ("neg-13", "env_info", "Returns non-sensitive runtime environment metadata like OS name."),  # 'env' benign-ish
     ("neg-14", "currency", "تحويل العملات بين الريال والدرهم والدولار."),            # legit Arabic
     ("neg-15", "calendar", "Creates a calendar event with a title, time, and attendees."),
+    # --- dangerous-looking but legitimate (harder negatives) --------------- #
+    ("neg-16", "ssh_fingerprint", "Parses an SSH public key and returns its fingerprint. Does not read private keys."),
+    ("neg-17", "env_docs", "Documents which environment variables the service reads, e.g. PORT and LOG_LEVEL."),
+    ("neg-18", "password_reset", "Starts a password reset flow by emailing the user a one-time link."),
+    ("neg-19", "exfil_scanner", "Security tool that scans logs for signs of data exfiltration and reports matches."),
+    ("neg-20", "brand_lookup", "Looks up a brand name; supports names like Carrefour مكتبة جرير and Lulu."),  # legit mixed-script brand
+    ("neg-21", "send_report", "Send the weekly summary report to the team channel."),  # 'send' + benign
+    ("neg-22", "ar_cmd_help", "يشرح أوامر النظام: كيف تقرأ ملفًا أو تحذف عنصرًا بشكل آمن."),  # Arabic verbs, pure Arabic, no exfil phrase
+    ("neg-23", "token_refresh", "Refreshes the user's OAuth access token using the stored refresh token."),  # 'token' benign
 ]
 
 

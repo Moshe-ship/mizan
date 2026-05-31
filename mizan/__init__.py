@@ -72,6 +72,10 @@ try:
         scan_tools,
         ScanResult,
         Finding,
+        ScanConfig,
+        Decision,
+        decide,
+        report,
     )
 
     _HAS_MCPSCAN = True
@@ -119,4 +123,7 @@ if _HAS_QADIYA:
     ]
 
 if _HAS_MCPSCAN:
-    __all__ += ["scan_tool", "scan_tools", "ScanResult", "Finding"]
+    __all__ += [
+        "scan_tool", "scan_tools", "ScanResult", "Finding",
+        "ScanConfig", "Decision", "decide", "report",
+    ]

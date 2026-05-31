@@ -147,21 +147,24 @@ def _rule_codeswitch(text: str) -> list[Finding]:
 
 def _rule_semantic(text: str) -> list[Finding]:
     out: list[Finding] = []
+    # Semantic phrasing is advisory (medium): regex cannot read intent or
+    # negation ("does not read private keys"), so it warns for human/LLM
+    # review rather than hard-blocking like the high-precision structural rules.
     m = _EXFIL_EN.search(text)
     if m:
         out.append(Finding(
-            "R-EXFIL-001", "semantic", "high",
-            "Tool metadata instructs reading secrets / exfiltration / bypassing approval.",
+            "R-EXFIL-001", "semantic", "medium",
+            "Tool metadata appears to instruct reading secrets / exfiltration / bypassing approval (advisory — confirm intent).",
             evidence=_snip(m.group(0)),
-            remediation="Reject tools whose description issues data-access or exfiltration directives.",
+            remediation="Review the tool: legitimate security tools may mention these terms. Confirm with an LLM classifier before blocking.",
         ))
     ar = next((p for p in _EXFIL_AR if p in text), None)
     if ar:
         out.append(Finding(
-            "R-EXFIL-002", "semantic", "high",
-            "Arabic exfiltration / override directive in tool metadata.",
+            "R-EXFIL-002", "semantic", "medium",
+            "Arabic exfiltration / override phrasing in tool metadata (advisory — confirm intent).",
             evidence=ar,
-            remediation="Apply semantic-injection rules to Arabic text, not only English.",
+            remediation="Apply semantic-injection review to Arabic text, not only English; confirm intent before blocking.",
         ))
     return out
 
@@ -223,6 +226,76 @@ class ScanResult:
         )
 
 
+@dataclass(frozen=True)
+class ScanConfig:
+    """How a host should act on findings.
+
+    mode:
+      - "audit": never blocks; findings are logged/recorded only.
+      - "warn":  surfaces a warning (and receipt) but allows the tool.
+      - "block": rejects when a finding's severity is in block_severities
+                 or its rule is in deny_rules.
+    allow_rules: rule IDs to ignore entirely (false-positive overrides).
+    deny_rules:  rule IDs that always block (regardless of severity), in
+                 block mode.
+    """
+
+    mode: str = "audit"
+    block_severities: frozenset[str] = frozenset({"high"})
+    allow_rules: frozenset[str] = frozenset()
+    deny_rules: frozenset[str] = frozenset()
+
+
+@dataclass(frozen=True)
+class Decision:
+    action: str          # allow | warn | block
+    reason: str
+    findings: tuple[Finding, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "action": self.action,
+            "reason": self.reason,
+            "findings": [f.to_dict() for f in self.findings],
+        }
+
+
+def decide(result: "ScanResult", config: ScanConfig | None = None) -> Decision:
+    """Map findings + config to an allow/warn/block decision.
+
+    Behaviour is severity- and mode-driven, not just `result.ok` — so a host
+    can run audit-first, then escalate to warn/block deliberately.
+    """
+    config = config or ScanConfig()
+    effective = tuple(f for f in result.findings if f.rule_id not in config.allow_rules)
+    if not effective:
+        return Decision("allow", "no findings", ())
+
+    blocking = tuple(
+        f for f in effective
+        if f.severity in config.block_severities or f.rule_id in config.deny_rules
+    )
+    if config.mode == "block" and blocking:
+        ids = ",".join(sorted({f.rule_id for f in blocking}))
+        return Decision("block", f"blocking findings: {ids}", effective)
+    if config.mode in ("warn", "block"):
+        return Decision("warn", f"{len(effective)} finding(s)", effective)
+    return Decision("allow", f"audit: {len(effective)} finding(s) logged", effective)
+
+
+def report(result: "ScanResult") -> str:
+    """Human-readable scan report: rule, severity, evidence, remediation."""
+    if not result.findings:
+        return f"✓ {result.tool_name}: no findings"
+    lines = [f"⚠ {result.tool_name}: {len(result.findings)} finding(s) [{result.max_severity}]"]
+    for f in result.findings:
+        lines.append(f"  [{f.severity:6}] {f.rule_id:16} {f.family}")
+        lines.append(f"     {f.message}")
+        lines.append(f"     evidence:    {f.evidence[:80]}")
+        lines.append(f"     remediation: {f.remediation}")
+    return "\n".join(lines)
+
+
 def _tool_text(tool: Mapping[str, Any]) -> str:
     """Flatten the scannable surface of an MCP tool descriptor."""
     parts = [str(tool.get("name", "")), str(tool.get("description", ""))]
@@ -246,3 +319,42 @@ def scan_tool(tool: Mapping[str, Any]) -> ScanResult:
 
 def scan_tools(tools: list[Mapping[str, Any]]) -> list[ScanResult]:
     return [scan_tool(t) for t in tools]
+
+
+def _main(argv: list[str] | None = None) -> int:
+    """CLI: scan a JSON file of MCP tool descriptor(s).
+
+    Accepts a single tool object, a list of tools, or an MCP-style
+    {"tools": [...]} payload. Prints a report per tool and exits non-zero
+    if any decision is "block" under the chosen mode (default: audit).
+    """
+    import argparse
+    import json
+
+    ap = argparse.ArgumentParser(prog="mizan.mcpscan", description="Scan MCP tool descriptors for poisoning.")
+    ap.add_argument("path", help="JSON file: a tool, a list of tools, or {\"tools\": [...]}")
+    ap.add_argument("--mode", choices=["audit", "warn", "block"], default="audit")
+    args = ap.parse_args(argv)
+
+    data = json.loads(Path(args.path).read_text(encoding="utf-8"))
+    if isinstance(data, dict) and "tools" in data:
+        tools = data["tools"]
+    elif isinstance(data, dict):
+        tools = [data]
+    else:
+        tools = data
+
+    cfg = ScanConfig(mode=args.mode)
+    blocked = 0
+    for t in tools:
+        res = scan_tool(t)
+        d = decide(res, cfg)
+        print(report(res))
+        print(f"  → decision[{args.mode}]: {d.action} ({d.reason})\n")
+        if d.action == "block":
+            blocked += 1
+    return 1 if blocked else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

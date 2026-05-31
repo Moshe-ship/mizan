@@ -4,7 +4,7 @@
 
 Restore the prompt, balance contradictions, classify the case, constrain the arguments, verify the execution, then weigh the evidence.
 
-Mizan is built Arabic-first because Arabic exposes failures English often hides: morphology, dialect drift, transliteration, right-to-left text, BiDi safety, and token cost. What survives Arabic survives anything.
+Mizan is built Arabic-first because Arabic exposes failures English often hides: morphology, dialect drift, transliteration, right-to-left text, BiDi safety, and token cost. Those are the same blind spots that hide **tool-poisoning attacks generic English scanners miss** — which is why Mizan ships a multilingual MCP scanner (`mizan.mcpscan`) alongside the reliability pipeline.
 
 This repository is the spine for the Mizan stack. It does not replace the existing repos. It makes them read as one system.
 
@@ -25,6 +25,23 @@ r.ok            # False — contradiction is fail-loud, not silently resolved
 r.contradiction # the conflict, surfaced for a clarifying question
 r.receipt.to_dict()  # the weighable trail (restore + balance stages)
 ```
+
+Scan an MCP tool descriptor for multilingual/Unicode poisoning (the `scan` step):
+
+```python
+from mizan import scan_tool, decide, ScanConfig
+
+res = scan_tool({"name": "get_weather", "description": "Weather. ‮ hidden reversed directive"})
+res.ok                                    # False — BiDi control flagged
+[f.rule_id for f in res.findings]         # ['R-BIDI-001']
+decide(res, ScanConfig(mode="block")).action   # 'block' (audit/warn/block modes)
+```
+
+`mizan.mcpscan` catches BiDi, invisible/TAG, homoglyph, Arabizi, Arabic/English
+code-switch, and (advisory) semantic-exfiltration vectors. Structural findings are
+`high` (block-worthy); semantic-language findings are `medium` (warn — confirm
+intent, since legitimate security tools mention these terms). Also a CLI:
+`python -m mizan.mcpscan tools.json --mode audit`.
 
 Constraint-driven tool gating (the `qadiya` step):
 
@@ -87,6 +104,7 @@ flowchart LR
 
 | Stage | Repo | Verb | Current state | Next improvement |
 |---|---|---|---|---|
+| Tool-surface inspection | `mizan.mcpscan` (this repo) | scan | Multilingual MCP poisoning scanner: 6 rule families, audit/warn/block modes, 43 tests, 25/25 corpus recall @ 0 high-FP | OTel export; held-out adversarial corpus; real mcp-scan comparison |
 | Pre-LLM input integrity | [jabr](https://github.com/Moshe-ship/jabr) | restore | Reversible prompt-context restoration, 31 tests | Publish as part of one preflight package |
 | Pre-LLM input integrity | [muqabalah](https://github.com/Moshe-ship/muqabalah) | balance | Reversible cancellation and fail-loud contradiction handling, 19 tests | Share a common receipt format with the rest of the stack |
 | Pre-LLM input integrity | [qadiya](https://github.com/Moshe-ship/qadiya) | classify + dispatch | Constraint-driven case registry, 15 tests | Done — exposed as `mizan.ToolGate` and wired into the Hermes plugin |
@@ -149,13 +167,15 @@ Every repo should have one job:
 | Client/cash | Funds the work and tests it in production | `performancemax`, `localbiz`, `yalla-ads`, `pmax-core` |
 | Archive | One-off with no role, no proof value, and no cash value | Decide after audit, not blindly |
 
-## Next Moves
+## Status & next moves
 
-1. Finish the preflight: wire `qadiya` into the Hermes plugin so all four operations run.
-2. Publish the measurement layer: `arabic-agent-eval` as a Hugging Face dataset and leaderboard Space, with `case-eval` results linked.
-3. Chain receipts: make `jabr`, `muqabalah`, `qadiya`, `mtg`, and `toolproof` produce a compatible audit trail.
-4. Distribute: submit `hurmoz`, the Hermes plugin, and `wasl` to the relevant Hermes/MCP discovery surfaces.
-5. Clean up repo positioning: update downstream READMEs to use the same verbs, avoid stale "first" claims, and link back here.
+Done: preflight (all four ops) wired into the Hermes plugin · `arabic-agent-eval` published as a HF dataset + static leaderboard · receipts chained across `jabr`/`muqabalah`/`qadiya`/`mtg`/`toolproof` (`examples/end_to_end.py`) · `hurmoz`/plugin/`wasl` submitted to `awesome-hermes-agent` · `mizan.mcpscan` shipped with the labeled corpus eval.
+
+Next:
+1. Wire `mizan.mcpscan` into the Hermes plugin (audit mode) so tools are scanned at registration.
+2. `mizan.otel` — export the `Receipt` as OpenTelemetry GenAI spans (interop) while keeping signed receipts (the gap OTel lacks).
+3. Expand the poisoning corpus with held-out adversarial cases, and run the real `mcp-scan` for the generic-scanner comparison column.
+4. `arabic-agent-eval` v2: format-instruction adherence, a code-switch split, and outcome/policy-level scoring.
 
 ## One-Line Pitch
 
