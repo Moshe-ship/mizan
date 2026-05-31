@@ -27,6 +27,10 @@ audit/warn/block decision. Try `examples/mcp_tools_clean.json` to see clean tool
 *warns*, never blocks). The rest of the pipeline (preflight, verify) needs the optional
 git extras; the scanner does not.
 
+How well does it work? See the honest, three-tier benchmark (consistency / held-out /
+fresh held-out): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHMARK.md)
+— 0 hard false positives across all tiers, ~63% recall on genuinely novel attacks.
+
 ## Use
 
 ```python
