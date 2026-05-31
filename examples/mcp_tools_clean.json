@@ -1,0 +1,27 @@
+{
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Returns the current weather for a city."
+    },
+    {
+      "name": "prayer_times",
+      "description": "ابحث عن مواقيت الصلاة في مدينة معينة وأعد الأوقات."
+    },
+    {
+      "name": "count_tokens",
+      "description": "Returns the number of tokens in a piece of text."
+    },
+    {
+      "name": "read_records",
+      "description": "Reads records from the database.",
+      "input_schema": {
+        "properties": {
+          "secret_key": {
+            "description": "The API secret key used for authentication."
+          }
+        }
+      }
+    }
+  ]
+}

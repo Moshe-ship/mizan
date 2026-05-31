@@ -12,6 +12,21 @@ This repository is the spine for the Mizan stack. It does not replace the existi
 
 Agents need a scale before autonomy. Every prompt transformation should be restorable, every contradiction should be balanced or escalated, every tool argument should be constrained, and every execution should leave a receipt that can be weighed against what the agent claims.
 
+## Quickstart — scan an MCP server for poisoning
+
+The scanner is dependency-free (detectors are vendored), so it runs from a bare install:
+
+```bash
+pip install "mizan[mcpscan]"          # or just: pip install mizan
+python -m mizan.mcpscan examples/mcp_tools_poisoned.json --mode audit
+```
+
+You get a per-tool report — rule ID, severity, evidence, remediation — plus an
+audit/warn/block decision. Try `examples/mcp_tools_clean.json` to see clean tools pass
+(legitimate Arabic, benign "token"/"secret" names, and a `secret_key` param that only
+*warns*, never blocks). The rest of the pipeline (preflight, verify) needs the optional
+git extras; the scanner does not.
+
 ## Use
 
 ```python

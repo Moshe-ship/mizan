@@ -21,19 +21,21 @@ prompt_injection). No new detection research — assembly + a semantic rule.
 from __future__ import annotations
 
 import re
-import sys
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from mizan.receipt import StageRecord, STAGE_SCAN
 
-sys.path.insert(0, str(Path.home() / "Projects" / "mtg"))
-
-from mtg.bidi import detect_bidi_threats  # noqa: E402
-from mtg.uts39 import analyze as uts39_analyze  # noqa: E402
-from mtg.translit import looks_like_arabizi, detect_script  # noqa: E402
-from mtg.prompt_injection import detect_prompt_injection  # noqa: E402
+# Vendored, dependency-free detectors — mcpscan runs with a bare `pip install
+# mizan`, no mtg / no ~/Projects fallback.
+from mizan._detect import (
+    detect_bidi_threats,
+    uts39_analyze,
+    looks_like_arabizi,
+    detect_script,
+    detect_override,
+)
 
 SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2}
 
@@ -222,14 +224,12 @@ def _rule_semantic(text: str) -> list[Finding]:
 
 
 def _rule_override(text: str) -> list[Finding]:
-    f = detect_prompt_injection(text)
-    inds = list(getattr(f, "indicators", ()) or ())
-    if inds:
-        cats = sorted({i.category for i in inds})
+    hit = detect_override(text)
+    if hit:
         return [Finding(
             "R-OVERRIDE-001", "override", "high",
             "Explicit instruction-override phrasing in tool metadata.",
-            evidence=",".join(cats),
+            evidence=hit,
             remediation="Reject tools whose metadata tries to override agent instructions.",
         )]
     return []
