@@ -14,6 +14,7 @@ from typing import Any, Mapping
 
 
 # Canonical stage names, in pipeline order. Tools attach to a stage.
+STAGE_SCAN = "scan"              # mcpscan (tool-surface inspection, pre-pipeline)
 STAGE_RESTORE = "restore"        # jabr
 STAGE_BALANCE = "balance"        # muqabalah
 STAGE_CLASSIFY = "classify"      # qadiya

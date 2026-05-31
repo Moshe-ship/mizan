@@ -52,8 +52,27 @@ API call that needs explicit authorization.
 3. This corpus is the **seed for an `arabic-agent-eval` poisoning split** — every
    detector rule maps to an item here (rule ↔ case, as agreed).
 
-## Next step to close the loop
+## Update — `mizan.mcpscan` built
 
-Run the real `mcp-scan` against `probe.py`'s corpus to fill the generic-scanner
-column for real. Until then, the wedge is evidenced (structurally) but not
-empirically confirmed.
+The probe became a real module, `mizan.mcpscan`, with six rule families
+(BiDi, invisible/TAG, homoglyph, Arabizi, code-switch, semantic exfiltration
+EN+AR, override). Each finding carries a rule ID, severity, evidence snippet,
+and remediation, and folds into the shared `Receipt` (`STAGE_SCAN`).
+
+- Arabizi now uses the real `mtg.translit.looks_like_arabizi` (verified to
+  exist), not a one-off regex.
+- A **semantic exfiltration** rule was added — the gap the plain-English
+  control exposed (read secrets / send all files / bypass approval / EN+AR).
+
+**Eval (`corpus.py` + `evaluate.py`, 40 cases — 25 poison, 15 clean):**
+
+    detected 25/25 poison | exact-rule recall 25/25 | false positives 0/15
+
+The 15 clean cases include *tricky* negatives (benign "token", "secret",
+"password", "env", legit Arabic, legit code-switch) — none flagged.
+
+**Honest caveat:** 25/25 is recall on a self-authored corpus, so it proves the
+rules are internally consistent and don't false-positive on hard negatives. It
+does **not** prove generalization. Two things still open:
+1. Held-out / third-party adversarial cases the rules weren't written against.
+2. The real `mcp-scan` comparison column (external tool + cloud API; needs auth).

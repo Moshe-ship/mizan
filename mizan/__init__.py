@@ -29,6 +29,7 @@ from mizan.receipt import (
     STAGE_CLASSIFY,
     STAGE_CONSTRAIN,
     STAGE_RESTORE,
+    STAGE_SCAN,
     STAGE_VERIFY,
 )
 from mizan.integrations import (
@@ -64,6 +65,19 @@ try:
 except Exception:  # noqa: BLE001
     _HAS_QADIYA = False
 
+# mcpscan needs mtg; import defensively so `import mizan` works without it.
+try:
+    from mizan.mcpscan import (  # noqa: F401
+        scan_tool,
+        scan_tools,
+        ScanResult,
+        Finding,
+    )
+
+    _HAS_MCPSCAN = True
+except Exception:  # noqa: BLE001
+    _HAS_MCPSCAN = False
+
 __version__ = "0.1.0"
 
 __all__ = [
@@ -77,6 +91,7 @@ __all__ = [
     "STAGE_BALANCE",
     "STAGE_CLASSIFY",
     "STAGE_CONSTRAIN",
+    "STAGE_SCAN",
     "STAGE_VERIFY",
     "record_from_mtg",
     "record_from_toolproof",
@@ -102,3 +117,6 @@ if _HAS_QADIYA:
         "predicate_constraint",
         "OTHER",
     ]
+
+if _HAS_MCPSCAN:
+    __all__ += ["scan_tool", "scan_tools", "ScanResult", "Finding"]
