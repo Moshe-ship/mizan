@@ -63,6 +63,12 @@ fresh held-out): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHM
 
 ## Use
 
+> **Requires the primitives.** `preflight` and the tool gate build on `jabr`,
+> `muqabalah`, and `qadiya`, which are not yet on PyPI. A bare `pip install mizan`
+> gives you the scanner only; calling `preflight` without the primitives raises a
+> `MissingPrimitiveError` telling you to install them. See
+> [Install the primitives](#quickstart--scan-an-mcp-server-for-poisoning) above.
+
 ```python
 from mizan import preflight, PreflightContext
 
