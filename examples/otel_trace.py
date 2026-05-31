@@ -52,8 +52,8 @@ def run() -> None:
     v = tp.Verifier(store, SECRET).verify_claim(tp.AgentClaim("book_flight", {"city": "الرياض"}, resp))
     receipt = receipt.with_stage(record_from_toolproof(v))
 
-    spans = receipt_to_spans(receipt, secret=SECRET)
-    print(f"receipt ok={receipt.ok}  signature={receipt.signature(SECRET)[:16]}…\n")
+    spans = receipt_to_spans(receipt, secret=SECRET, key_id="demo-key-1")
+    print(f"receipt ok={receipt.ok}  key_id=demo-key-1  signature={receipt.signature(SECRET)[:16]}…\n")
     for s in spans:
         ind = "" if s["parent_span_id"] is None else "  └─ "
         print(f"{ind}{s['name']:22} [{s['status']:5}] {s['attributes'].get('gen_ai.operation.name')}")
