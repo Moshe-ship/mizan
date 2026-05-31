@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mizan"
-version = "0.1.0"
+version = "0.1.1"
 description = "The reliability scale for AI agents: restore, balance, classify, constrain, verify, weigh."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,6 +18,11 @@ keywords = ["ai", "agents", "reliability", "arabic", "tool-calling", "preflight"
 # mizan also adds local source checkouts under ~/Projects to sys.path as a
 # fallback, so it imports in a dev tree without an install step.
 dependencies = []
+
+[project.urls]
+Source = "https://github.com/Moshe-ship/mizan"
+Issues = "https://github.com/Moshe-ship/mizan/issues"
+Documentation = "https://github.com/Moshe-ship/mizan/blob/main/docs/MCP_POISONING_BENCHMARK.md"
 
 # PyPI forbids direct-URL (git+https) dependencies, so the primitives
 # (jabr/muqabalah/qadiya/mtg/toolproof) are NOT declared as extras here — they
