@@ -4,8 +4,14 @@
 [![Python](https://img.shields.io/pypi/pyversions/mizan)](https://pypi.org/project/mizan/)
 [![CI](https://github.com/Moshe-ship/mizan/actions/workflows/ci.yml/badge.svg)](https://github.com/Moshe-ship/mizan/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/pypi/l/mizan)](LICENSE)
+[![Trusted Publishing](https://img.shields.io/badge/PyPI-Trusted%20Publishing-blue)](docs/SUPPLY_CHAIN.md)
 
 **The reliability scale for AI agents.**
+
+> **Status: public alpha (pre-1.0).** The stack is installable, attested,
+> token-free, and tested end to end. It is *not* a claim of complete security —
+> repository hardening (branch/tag protection, required reviews) is in progress.
+> See [docs/SUPPLY_CHAIN.md](docs/SUPPLY_CHAIN.md).
 
 Restore the prompt, balance contradictions, classify the case, constrain the arguments, verify the execution, then weigh the evidence.
 

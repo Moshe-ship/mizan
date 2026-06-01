@@ -67,3 +67,30 @@ jobs:
               assert "mizan[preflight]" in str(e), str(e)
               print("friendly error OK:", str(e).splitlines()[0])
           PY
+
+  pypi-smoke:
+    # Installs the PUBLISHED mizan[all] from PyPI (not the source tree) and runs
+    # the pipeline end to end — verifies the live package, exactly as a user
+    # gets it. Tests the latest release on PyPI, so it lags a tag by one publish.
+    name: Published mizan[all] from PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Install published mizan[all] from PyPI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "mizan[all]"
+      - name: Run the pipeline against the PyPI-installed stack
+        run: |
+          python - <<'PY'
+          import mizan
+          from mizan import preflight, PreflightContext
+          r = preflight("send it. cancel it.",
+                        PreflightContext(contradiction_predicates=[("send", "cancel")]))
+          assert r.ok is False and r.contradiction is not None, "preflight should fail loud"
+          from mizan.mcpscan import scan_tool, report
+          assert "BIDI" in report(scan_tool({"name": "t", "description": "x ‮ rev"}))
+          print("PyPI mizan[all] OK:", mizan.__version__)
+          PY

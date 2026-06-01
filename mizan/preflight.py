@@ -18,10 +18,8 @@ primitives are re-exported from :mod:`mizan` for that purpose.
 from __future__ import annotations
 
 import re
-import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from mizan.receipt import (
@@ -31,17 +29,10 @@ from mizan.receipt import (
     STAGE_RESTORE,
 )
 
-# The three primitives are not yet on PyPI. Mirror the proven plugin pattern:
-# make local source checkouts importable, then fall back to whatever is on
-# sys.path (an installed/editable copy).
-for _name in ("jabr", "muqabalah", "qadiya"):
-    _candidate = Path.home() / "Projects" / _name
-    if _candidate.is_dir() and str(_candidate) not in sys.path:
-        sys.path.insert(0, str(_candidate))
-
+# jabr/muqabalah are installed from PyPI via `pip install mizan[preflight]`.
 try:
-    from jabr import restore, RestorationContext  # noqa: E402
-    from muqabalah import (  # noqa: E402
+    from jabr import restore, RestorationContext
+    from muqabalah import (
         balance,
         CancellationContext,
         CancellationConflict,

@@ -1,8 +1,9 @@
 """Friendly errors for mizan's optional primitive packages.
 
 The reliability pipeline (``preflight``, ``toolgate``, ``verify``) builds on
-five primitives — jabr, muqabalah, qadiya, mtg, toolproof — that are not yet
-on PyPI. The ``mizan.mcpscan`` scanner needs none of them.
+five primitives — jabr, muqabalah, qadiya, mtg-guards, toolproof-receipt —
+installed from PyPI via ``pip install mizan[all]``. The ``mizan.mcpscan``
+scanner needs none of them.
 
 When a primitive is imported but missing, raise a clear, actionable error
 instead of a bare ``ModuleNotFoundError: No module named 'jabr'``.
