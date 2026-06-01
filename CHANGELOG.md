@@ -4,6 +4,16 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.8] — 2026-06-01
+
+### Changed (docs precision — no code change)
+- Clarify the OpenAI adapter's scope: it records and signs the *observed* tool
+  execution (`verification: not_applicable`). `mizan verify` proves the receipt
+  is signed and untampered — **not** that an agent's later *claim* matches what
+  ran. Claim-vs-execution is a separate layer (the `verify` stage / `toolproof`).
+- Refresh stale roadmap text (primitives are on PyPI; the Receipt spec is frozen
+  at v0; CI is live) and list claim-vs-execution attestation as the next layer.
+
 ## [0.1.7] — 2026-06-01
 
 ### Added (additive)

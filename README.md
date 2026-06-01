@@ -51,7 +51,8 @@ recommended OTel + cryptographic-hashing controls. Spec, JSON Schema, and
 passed/blocked/tampered examples: [docs/RECEIPT_SPEC.md](docs/RECEIPT_SPEC.md).
 
 **Inside a real agent runtime** — run your agent normally; Mizan gives every
-tool call a signed receipt you can verify later ([OpenAI Agents SDK adapter](examples/openai_agents_receipt.py)):
+tool action a signed receipt you can verify later **for integrity and audit**
+([OpenAI Agents SDK adapter](examples/openai_agents_receipt.py)):
 
 ```python
 from agents import function_tool
@@ -62,6 +63,12 @@ from mizan.adapters.openai import receipt_tool
 def get_weather(city: str) -> dict:
     return {"city": city, "temp": 72}
 ```
+
+> **Scope:** the adapter records and signs the *observed* tool execution
+> (`verification: not_applicable`). `mizan verify` proves the receipt was signed
+> and not tampered with — **not** that an agent's later *claim* matches what ran.
+> Claim-vs-execution is a separate step (the `verify` stage, backed by
+> `toolproof-receipt`).
 
 ## Quickstart — scan an MCP server for poisoning
 
@@ -299,10 +306,16 @@ Every repo should have one job:
 
 Done: preflight (all four ops) wired into the Hermes plugin · `arabic-agent-eval` published as a HF dataset + static leaderboard · receipts chained across `jabr`/`muqabalah`/`qadiya`/`mtg`/`toolproof` (`examples/end_to_end.py`) · `hurmoz`/plugin/`wasl` submitted to `awesome-hermes-agent` · `mizan.mcpscan` shipped with the labeled corpus eval + Hermes plugin audit mode · `mizan.otel` exports receipts as OTel-compatible spans with HMAC signatures.
 
+Done since: the primitives are on PyPI (`jabr`, `muqabalah`, `qadiya`,
+`mtg-guards`, `toolproof-receipt`) so `pip install "mizan[all]"` installs the
+whole pipeline; the **Receipt spec is frozen at v0** ([docs/RECEIPT_SPEC.md](docs/RECEIPT_SPEC.md))
+with `mizan verify`; every repo has live CI; and the OpenAI Agents SDK adapter
+emits a signed receipt per tool call.
+
 Next:
 1. Harden `mcpscan` against v2 held-out gaps (ZWNJ/joiner, tab-spacing, semantic vocabulary), then author a fresh v3 set. Held-out generalization so far: ~63% recall on novel attacks, **0 hard false positives** across two sets (audit/warn-ready, not default-block). Run the real `mcp-scan` for the generic-scanner comparison when a public claim is wanted.
-2. `arabic-agent-eval` v2: format-instruction adherence, a code-switch split, and outcome/policy-level scoring.
-3. Eventually: real PyPI versions (or vendoring) for `jabr`/`muqabalah`/`qadiya`/`mtg` instead of git extras; a formal receipt spec once the shape is stable.
+2. A reproducible benchmark vs the `mcp-scan` baseline on a labeled multilingual corpus (catch / miss / false-positive), Arabic morphology/dialect/transliteration depth as the axis — not first-mover on Unicode.
+3. A claim-vs-execution layer: compare an agent's claimed tool result against the signed execution Receipt (the `verify` stage / `toolproof-receipt`), so `mizan verify` can also attest *the agent did not lie about the result*.
 
 ## One-Line Pitch
 
