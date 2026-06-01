@@ -55,3 +55,42 @@ jobs:
           path: dist/
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        with:
+          # Lets a re-run after a transient mid-upload network drop complete the
+          # release instead of 400ing on already-uploaded files. The
+          # verify-published job below is the gate that a partial release fails.
+          skip-existing: true
+
+  verify-published:
+    name: Verify published release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Require version, wheel+sdist, provenance, and an install smoke
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          export VERSION
+          echo "Verifying mizan $VERSION on PyPI"
+          for i in $(seq 1 12); do
+            if curl -sf "https://pypi.org/pypi/mizan/$VERSION/json" -o /tmp/pj.json; then break; fi
+            echo "  not on index yet, waiting…"; sleep 15
+          done
+          python - <<'PY'
+          import json, os
+          v = os.environ["VERSION"]
+          files = [u["filename"] for u in json.load(open("/tmp/pj.json"))["urls"]]
+          assert any(f.endswith(".whl") for f in files), f"no wheel for {v}: {files}"
+          assert any(f.endswith(".tar.gz") for f in files), f"no sdist for {v}: {files}"
+          print("files OK:", files)
+          PY
+          for f in $(python -c "import json;print(' '.join(u['filename'] for u in json.load(open('/tmp/pj.json'))['urls']))"); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/integrity/mizan/$VERSION/$f/provenance")
+            echo "provenance $f: HTTP $code"
+            [ "$code" = "200" ] || { echo "::error::missing provenance for $f"; exit 1; }
+          done
+          for i in $(seq 1 6); do python -m pip install -q "mizan==$VERSION" && break || sleep 15; done
+          python -c "import mizan, importlib.metadata as m; assert m.version('mizan')==__import__('os').environ['VERSION']; print('install smoke OK', mizan.__version__)"

@@ -62,11 +62,33 @@ Before tagging `vX.Y.Z`:
 - [ ] for `mizan`: `pip install "mizan[all]"` in a clean venv runs `preflight` end to end
 - [ ] CI is green on `main` (matrix + scanner-standalone + PyPI smoke)
 
-After publishing:
+After publishing (the `verify-published` CI job enforces these automatically):
 
 - [ ] provenance returns HTTP 200 for **both** the wheel and the sdist (Integrity API)
 - [ ] PyPI page resolves the new version; `pip install` picks it up
 - [ ] GitHub Release created with the install command and provenance note
+
+## Release pipeline resilience
+
+The release workflow has two safety properties:
+
+- **`skip-existing: true`** on the publish step — a transient mid-upload network
+  drop (`Response ended prematurely`) can be recovered by re-running the failed
+  job; already-uploaded files are skipped instead of causing a 400.
+- **A `verify-published` gate job** runs after publish and fails the release
+  loudly if the tagged version is missing from PyPI, is missing the wheel or
+  sdist, lacks provenance (HTTP 200) for either file, or fails an install smoke.
+  So a *partial* release cannot pass silently even with `skip-existing`.
+
+**If a publish fails (transient upload error):**
+
+1. Confirm nothing partial landed: `curl -s https://pypi.org/pypi/mizan/<version>/json`
+   → a `404` means the version is clean to retry.
+2. Re-run just the failed job: `gh run rerun <run-id> --failed`.
+3. The `verify-published` gate confirms files + provenance before the run is green.
+
+A PyPI version is immutable — never re-tag; if a *bad* artifact landed, bump the
+patch version rather than trying to overwrite.
 
 ## Honest scope
 

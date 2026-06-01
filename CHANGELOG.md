@@ -4,6 +4,16 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.9] — 2026-06-01
+
+### Changed (CI/release hardening — no library change)
+- Release workflow: `skip-existing: true` so a transient mid-upload network drop
+  can be recovered by re-running the failed job, plus a **`verify-published`**
+  gate job that fails the release if the version, wheel, sdist, provenance
+  (HTTP 200 each), or an install smoke is missing. A partial release can no
+  longer pass silently.
+- `docs/SUPPLY_CHAIN.md`: release-resilience + manual recovery steps.
+
 ## [0.1.8] — 2026-06-01
 
 ### Changed (docs precision — no code change)
