@@ -64,6 +64,6 @@ jobs:
               from mizan import preflight  # triggers lazy jabr import
               raise SystemExit("expected MissingPrimitiveError, preflight imported")
           except MissingPrimitiveError as e:
-              assert "git+https://github.com/Moshe-ship/jabr.git" in str(e)
+              assert "mizan[preflight]" in str(e), str(e)
               print("friendly error OK:", str(e).splitlines()[0])
           PY
