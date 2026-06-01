@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mizan"
-version = "0.1.10"
+version = "0.1.11"
 description = "The reliability scale for AI agents: restore, balance, classify, constrain, verify, weigh."
 readme = "README.md"
 requires-python = ">=3.10"

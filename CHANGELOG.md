@@ -4,6 +4,17 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.11] — 2026-06-01
+
+### Added
+- **`examples/full_pipeline_demo.py`** — the whole scale in one run: a poisoned
+  MCP tool (BiDi finding), an Arabic request with a contradiction (caught), a
+  transliterated argument (blocked by mtg), and a lying agent (rejected by
+  toolproof) — all weighed into one signed Receipt v0 that `mizan verify` passes,
+  plus a tamper that fails. One file, one command (`pip install "mizan[all]"`).
+- Smoke test that runs the demo and verifies its receipt (skips without the
+  primitives installed).
+
 ## [0.1.10] — 2026-06-01
 
 ### Added

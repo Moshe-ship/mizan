@@ -30,6 +30,13 @@ saw, what policy allowed, what tool ran, what result came back, and whether the
 claim matches execution. One agent turn → one portable, signed, replayable
 [**Receipt**](docs/RECEIPT_SPEC.md) an auditor can verify after the fact.
 
+> **See the whole scale in one run:** [`examples/full_pipeline_demo.py`](examples/full_pipeline_demo.py)
+> — a poisoned MCP tool, an Arabic request, a transliterated argument, and a lying
+> agent; Mizan flags the descriptor, catches the contradiction, blocks the
+> transliteration, rejects the fake claim, and emits one signed receipt that
+> `mizan verify` passes (and a tamper fails). `pip install "mizan[all]"` then
+> `python examples/full_pipeline_demo.py`.
+
 ```python
 from mizan.receipt import Receipt, StageRecord
 
