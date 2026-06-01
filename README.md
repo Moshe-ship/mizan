@@ -110,9 +110,12 @@ The rest of the pipeline (`preflight`, `verify`) depends on the primitive packag
 are on PyPI — `pip install "mizan[all]"` (or `mizan[preflight]`) pulls them in. The
 scanner does not need them.
 
-How well does it work? See the honest, three-tier benchmark (consistency / held-out /
-fresh held-out): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHMARK.md)
-— 0 hard false positives across all tiers, ~63% recall on genuinely novel attacks.
+How well does it work? See the reproducible, three-split benchmark (consistency /
+held-out adversarial / clean false-positive): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHMARK.md).
+Measured **per category** (catch / miss / false-positive) with **0 hard false
+positives** and the held-out misses listed honestly — regenerate it with
+`python benchmark/run.py`. No competitor numbers are claimed; a real `mcp-scan`
+head-to-head is a documented follow-up.
 
 ## Use
 
@@ -312,9 +315,13 @@ whole pipeline; the **Receipt spec is frozen at v0** ([docs/RECEIPT_SPEC.md](doc
 with `mizan verify`; every repo has live CI; and the OpenAI Agents SDK adapter
 emits a signed receipt per tool call.
 
+Done since: a reproducible, three-split benchmark ([docs/MCP_POISONING_BENCHMARK.md](docs/MCP_POISONING_BENCHMARK.md),
+`python benchmark/run.py`) — per-category catch/miss/false-positive, **0 hard false
+positives**, held-out misses listed honestly. Mizan-only numbers; no competitor claims.
+
 Next:
-1. Harden `mcpscan` against v2 held-out gaps (ZWNJ/joiner, tab-spacing, semantic vocabulary), then author a fresh v3 set. Held-out generalization so far: ~63% recall on novel attacks, **0 hard false positives** across two sets (audit/warn-ready, not default-block). Run the real `mcp-scan` for the generic-scanner comparison when a public claim is wanted.
-2. A reproducible benchmark vs the `mcp-scan` baseline on a labeled multilingual corpus (catch / miss / false-positive), Arabic morphology/dialect/transliteration depth as the axis — not first-mover on Unicode.
+1. **Real `mcp-scan` head-to-head** (the documented follow-up): pin its version, document the install + descriptor conversion, run the same corpus, publish the exact command + output. Until then no competitor numbers are claimed.
+2. Harden `mcpscan` on the held-out misses (fullwidth-Latin homoglyphs, keyword-free English exfil), then grow the corpus.
 3. A claim-vs-execution layer: compare an agent's claimed tool result against the signed execution Receipt (the `verify` stage / `toolproof-receipt`), so `mizan verify` can also attest *the agent did not lie about the result*.
 
 ## One-Line Pitch

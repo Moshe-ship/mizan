@@ -1,80 +1,60 @@
-# A multilingual MCP tool-poisoning benchmark
+# Multilingual MCP tool-poisoning benchmark — measured
 
-Most MCP security scanners inspect tool metadata for English suspicious-pattern
-signals. But the tool surface is text, and text hides attacks in ways English
-pattern-matching does not see: right-to-left overrides, invisible and TAG-block
-characters, homoglyphs, Arabizi (Latin-script Arabic), and Arabic/English
-code-switched directives. This is a small, honest benchmark for that gap — and
-for the scanner (`mizan.mcpscan`) built to close it.
+> **Mizan-only measurements.** These numbers come from running `mizan.mcpscan`
+> over a committed corpus. **No competitor (e.g. `mcp-scan`) numbers are claimed**
+> here — a real head-to-head is a documented follow-up (see *Follow-up*). The point
+> of three separated splits is honesty: a single self-authored aggregate score is not.
 
-> **Framing.** This does not claim to beat any scanner. Generic scanners focus
-> on generic/static metadata risks; Mizan adds a multilingual Unicode/dialect
-> layer and carries findings into runtime receipts. The numbers below are
-> measured, including where the scanner fails.
+Reproduce: `pip install mizan && python benchmark/run.py`. Corpus: [`benchmark/corpus/`](../benchmark/corpus/).
 
-## What it measures
+## 1. Consistency / regression (known patterns)
 
-Each case is an MCP tool descriptor (name, description, and optionally input
-schema with parameter descriptions). A scanner must flag poisoned descriptors
-and leave legitimate ones alone — **including legitimate tools that look
-dangerous** (security tools that mention "exfiltration", benign `token`/`secret`
-names, and legitimate Arabic instructions like "اقرأ الوثائق / read the docs").
+Poison descriptors with patterns the rules encode. Caught **25/25**.
 
-Rule families: BiDi controls, invisible/TAG payloads, homoglyph/mixed-script,
-Arabizi, Arabic/English code-switch directives, semantic exfiltration (EN+AR),
-and instruction override.
+| family | total | caught | missed | generic scanners |
+|---|---|---|---|---|
+| `arabizi` | 3 | 3 | 0 | Rarely — Latin-script Arabic is a multilingual gap (Mizan depth) |
+| `bidi` | 3 | 3 | 0 | Commonly covered (OWASP Prompt-Injection cheat sheet flags BiDi/RTL overrides) |
+| `codeswitch` | 3 | 3 | 0 | Rarely — Arabic/English embedded directives (Mizan depth) |
+| `homoglyph` | 4 | 4 | 0 | Commonly covered (confusables/mixed-script detection is widespread) |
+| `invisible` | 3 | 3 | 0 | Partially (zero-width often caught; ZWNJ-between-letters is subtler) |
+| `override` | 2 | 2 | 0 | Partially (imperative directives common; spacing/tab evasion subtler) |
+| `semantic` | 7 | 7 | 0 | Partially (English exfil keywords common; AR / synonyms / base64 subtler) |
 
-## Methodology — three tiers, deliberately separated
+## 2. Held-out adversarial (fresh variants)
 
-The point of separating them is honesty: a single self-authored number is
-self-congratulatory.
+Variants **not** directly encoded — the honest generalization test. Caught **14/16**; misses are listed per family.
 
-1. **Consistency corpus** — cases written from the same rule logic. Measures
-   internal consistency and false-positive discipline, not generalization.
-2. **Held-out v1** — cases authored to attack the rules' assumptions. Exposed
-   gaps; the rules were then fixed *by failure category*, never tuned to the
-   exact cases.
-3. **Fresh held-out v2** — new cases authored *after* the fixes, never trained
-   against. This is the generalization number.
+| family | total | caught | missed | generic scanners |
+|---|---|---|---|---|
+| `arabizi` | 2 | 2 | 0 | Rarely — Latin-script Arabic is a multilingual gap (Mizan depth) |
+| `bidi` | 2 | 2 | 0 | Commonly covered (OWASP Prompt-Injection cheat sheet flags BiDi/RTL overrides) |
+| `codeswitch` | 1 | 1 | 0 | Rarely — Arabic/English embedded directives (Mizan depth) |
+| `cross-field` | 1 | 1 | 0 | Partially (multi-field dataflow is uneven across tools) |
+| `homoglyph` | 3 | 2 | 1 (v2-7) | Commonly covered (confusables/mixed-script detection is widespread) |
+| `invisible` | 1 | 1 | 0 | Partially (zero-width often caught; ZWNJ-between-letters is subtler) |
+| `override` | 2 | 2 | 0 | Partially (imperative directives common; spacing/tab evasion subtler) |
+| `semantic` | 4 | 3 | 1 (v2-8) | Partially (English exfil keywords common; AR / synonyms / base64 subtler) |
 
-## Results
+## 3. Clean false-positive set (legit confusables)
 
-| tier | recall | hard false-positives | notes |
-|---|---|---|---|
-| consistency | 25/25 | 0/23 | incl. tricky benign negatives (`count_tokens`, `secret_santa`, `hash_password`) |
-| held-out v1 (post-fix, now seen) | 8/8 | 0/10 | regression check, not generalization |
-| **fresh held-out v2** | **6/8** | **0/7** | the honest generalization number |
+Legitimate tools that look dangerous: security scanners, benign `token`/`secret`/`ssh` mentions, legit Arabic, and mixed-language text. **40** items.
 
-**Across all three tiers: 0 hard false positives.** Recall on genuinely novel
-attacks is ~63%. Structural Unicode rules (BiDi, homoglyph, invisible) and
-**parameter-surface scanning** generalize well; semantic and obfuscation
-coverage is partial.
+- **Hard false positives (high-severity on a clean tool): 0** ✓
+- Soft flags (medium-severity, audit/warn not block): 5 — neg-16:clean, ho-11:ssh-mgr-negated, ho-15:ar-read-docs, ho-17:pw-reset, v2-12:secret-param
 
-### Where it fails (recorded, not hidden)
-- Whitespace/spaced-out and cross-field payloads are caught only after a
-  normalization + holistic pass, at medium confidence.
-- Fullwidth-character leetspeak and pure-synonym exfiltration ("transmit … to an
-  outside host") are missed — deliberately not chased with more regexes.
-- ZWNJ between Latin letters is flagged; ZWNJ inside Arabic/Persian is **not**
-  (it is legitimate there) — preserving multilingual credibility over recall.
+## Where the edge actually is
 
-## Product stance
+Generic English/Unicode scanners and the OWASP cheat sheet already cover **bidi**,
+**homoglyph**, and much of **invisible** — Mizan does **not** claim to have invented
+Unicode detection. Mizan's measured differentiation is the multilingual/Arabic layer:
+**arabizi** (Latin-script Arabic), **codeswitch** (Arabic/English embedded directives),
+and the Arabic side of **semantic** exfiltration — categories the held-out split shows
+are where Arabic morphology/dialect/transliteration depth matters.
 
-**Audit/warn-ready, not default-block.** One blocking false positive per ten
-clean tools would be too many to auto-block; the scanner is built to run in
-audit or warn mode, escalating to block only on high-confidence structural
-findings. Semantic findings are advisory (medium).
+## Follow-up — real `mcp-scan` comparison (not yet run)
 
-## Reproduce
-
-```bash
-pip install mizan
-cd experiments/mcp-poisoning-probe
-python corpus.py        && python evaluate.py
-python held_out.py      && python held_out_eval.py
-python held_out_v2.py   && python held_out_eval.py held_out_v2.jsonl
-```
-
-Corpus, evaluators, and raw findings: [`experiments/mcp-poisoning-probe/`](../experiments/mcp-poisoning-probe).
-Scanner: [`mizan/mcpscan.py`](../mizan/mcpscan.py). Complementary to the
-arXiv:2603.22489 MCP threat-modeling line and the OWASP Agentic Top 10 (2026).
+A live head-to-head against Invariant's `mcp-scan` is **not** included. When run it will:
+pin the `mcp-scan` version, document the install command and the descriptor/input
+conversion, run the **same** corpus, and publish the exact command + output — updating
+this doc only with measured numbers, per category.

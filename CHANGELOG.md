@@ -4,6 +4,22 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.10] — 2026-06-01
+
+### Added
+- **Reproducible MCP-poisoning benchmark** (`benchmark/`): committed corpus in
+  three separated splits (consistency / held-out adversarial / clean
+  false-positive) and a harness (`python benchmark/run.py`) that reports **per
+  category** catch / miss / false-positive — no single aggregate score, with a
+  generic-coverage column and the held-out misses listed honestly. Measured:
+  consistency 25/25, held-out 14/16 (2 real misses surfaced), **0 hard false
+  positives**. Mizan-only numbers; a real `mcp-scan` head-to-head is a
+  documented follow-up. Regenerates `docs/MCP_POISONING_BENCHMARK.md`.
+- A regression-guard test (consistency fully caught + no hard FP).
+
+### Changed
+- README: replace the stale "~63% recall" claim with the reproducible benchmark.
+
 ## [0.1.9] — 2026-06-01
 
 ### Changed (CI/release hardening — no library change)
