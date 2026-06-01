@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mizan"
-version = "0.1.6"
+version = "0.1.7"
 description = "The reliability scale for AI agents: restore, balance, classify, constrain, verify, weigh."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,6 +48,7 @@ preflight = [
     "qadiya>=0.1.0,<0.2.0",
 ]
 verify = ["toolproof-receipt>=0.5.2,<0.6.0"]
+openai = ["openai-agents>=0.1"]  # OpenAI Agents SDK — only for the adapter; core needs none
 all = [
     "jabr>=0.1.0,<0.2.0",
     "muqabalah>=0.1.0,<0.2.0",
@@ -62,7 +63,7 @@ all = [
 mizan = "mizan.__main__:main"
 
 [tool.setuptools]
-packages = ["mizan"]
+packages = ["mizan", "mizan.adapters"]
 
 [tool.setuptools.package-data]
 mizan = ["schemas/*.json"]

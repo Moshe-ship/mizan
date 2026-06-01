@@ -4,6 +4,18 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.7] — 2026-06-01
+
+### Added (additive)
+- **OpenAI Agents SDK adapter** (`mizan.adapters.openai.receipt_tool`): wrap a
+  tool so every call emits a signed Receipt v0 — captures tool name, args hash,
+  result hash, observed status (`ok`/`error`), and agent/model/run ids.
+  Import-safe (no `openai`/`agents` import); compose under `@function_tool`.
+  Sync + async tools; leading `RunContextWrapper` excluded from the args hash;
+  `run_id` falls back to the active OTel trace id. `pip install "mizan[openai]"`
+  adds the SDK for end-to-end use.
+- `examples/openai_agents_receipt.py`.
+
 ## [0.1.6] — 2026-06-01
 
 ### Added (all additive — `Receipt.to_dict()` unchanged)

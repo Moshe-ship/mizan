@@ -50,6 +50,19 @@ tamper-evidence OpenTelemetry does not provide, satisfying OWASP MCP08's
 recommended OTel + cryptographic-hashing controls. Spec, JSON Schema, and
 passed/blocked/tampered examples: [docs/RECEIPT_SPEC.md](docs/RECEIPT_SPEC.md).
 
+**Inside a real agent runtime** — run your agent normally; Mizan gives every
+tool call a signed receipt you can verify later ([OpenAI Agents SDK adapter](examples/openai_agents_receipt.py)):
+
+```python
+from agents import function_tool
+from mizan.adapters.openai import receipt_tool
+
+@function_tool                                  # SDK derives the tool schema
+@receipt_tool(secret="…", key_id="local")       # Mizan signs each call
+def get_weather(city: str) -> dict:
+    return {"city": city, "temp": 72}
+```
+
 ## Quickstart — scan an MCP server for poisoning
 
 The scanner is dependency-free (detectors are vendored), so it runs from a bare install — no extras needed:
