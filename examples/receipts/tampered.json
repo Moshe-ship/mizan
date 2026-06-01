@@ -1,0 +1,93 @@
+{
+  "schema_version": "mizan.receipt/0",
+  "receipt_id": "rcpt_dead0000",
+  "created_at": "2026-06-01T18:32:00Z",
+  "subject": {
+    "agent_id": "agent-demo",
+    "model": "claude-opus-4-8",
+    "run_id": "run-001",
+    "tool": null
+  },
+  "input": {
+    "hash": "sha256:b58334959ea90db5676676835f8bfdb8a0b92d6a45d0cdd7081030b0a0fb40f4",
+    "summary": "Arabic booking request (redacted)"
+  },
+  "output": {
+    "hash": "sha256:36614338d5480aca16c7bb37bcdf7c7d95ec5c48e13c90b91b0b9d6dec6e3bdc",
+    "summary": null
+  },
+  "decision": {
+    "action": "allowed",
+    "reason": "no stage refused"
+  },
+  "execution": {
+    "tool": "book_flight",
+    "args_hash": "sha256:1c8c0d477850ab4063fd72dcdb68e9cde78b25bed028803c57111734379dd9fc",
+    "result_hash": "sha256:9bcad04eb903fb65e5411853bf669f7a899a514343500cd2a9f6695ff7e37970",
+    "observed_status": "ok"
+  },
+  "claim": {
+    "tool": "book_flight",
+    "result_hash": "sha256:b87e0cdf7b48abd7486ddc6338e5c7af4f776fb4e17dcc41707e41467981b8ea"
+  },
+  "verification": "verified",
+  "stages": [
+    {
+      "stage": "scan",
+      "tool": "mcpscan",
+      "ok": true,
+      "changes": 0,
+      "detail": {
+        "findings": 0
+      }
+    },
+    {
+      "stage": "restore",
+      "tool": "jabr",
+      "ok": true,
+      "changes": 1,
+      "detail": {
+        "spans_restored": 1
+      }
+    },
+    {
+      "stage": "balance",
+      "tool": "muqabalah",
+      "ok": true,
+      "changes": 0,
+      "detail": {}
+    },
+    {
+      "stage": "classify",
+      "tool": "qadiya",
+      "ok": true,
+      "changes": 0,
+      "detail": {
+        "case": "book_flight"
+      }
+    },
+    {
+      "stage": "constrain",
+      "tool": "mtg",
+      "ok": true,
+      "changes": 0,
+      "detail": {
+        "violations": 0
+      }
+    },
+    {
+      "stage": "verify",
+      "tool": "toolproof",
+      "ok": true,
+      "changes": 0,
+      "detail": {
+        "verdict": "VERIFIED"
+      }
+    }
+  ],
+  "signature": {
+    "algorithm": "HMAC-SHA256",
+    "key_id": "demo",
+    "value": "e63210b68b92bc1209a00cb3201c9d551631f0e60f49f7b56a9048f5420456ca"
+  }
+}
