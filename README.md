@@ -53,8 +53,8 @@ python -m mizan.mcpscan examples/mcp_tools_poisoned.json --mode audit
 # benign "token"/"secret" names, and a `secret_key` param that only *warns*, never blocks.
 ```
 
-The rest of the pipeline (`preflight`, `verify`) depends on the primitive packages, which
-are not yet on PyPI — install them from git or editable from a dev tree (see below). The
+The rest of the pipeline (`preflight`, `verify`) depends on the primitive packages. They
+are on PyPI — `pip install "mizan[all]"` (or `mizan[preflight]`) pulls them in. The
 scanner does not need them.
 
 How well does it work? See the honest, three-tier benchmark (consistency / held-out /
@@ -64,10 +64,9 @@ fresh held-out): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHM
 ## Use
 
 > **Requires the primitives.** `preflight` and the tool gate build on `jabr`,
-> `muqabalah`, and `qadiya`, which are not yet on PyPI. A bare `pip install mizan`
-> gives you the scanner only; calling `preflight` without the primitives raises a
-> `MissingPrimitiveError` telling you to install them. See
-> [Install the primitives](#quickstart--scan-an-mcp-server-for-poisoning) above.
+> `muqabalah`, and `qadiya`. A bare `pip install mizan` gives you the scanner only;
+> for the pipeline run **`pip install "mizan[preflight]"`** (or `mizan[all]`).
+> Calling `preflight` without them raises a `MissingPrimitiveError` that says exactly this.
 
 ```python
 from mizan import preflight, PreflightContext
@@ -121,19 +120,22 @@ gate = ToolGate(
 gate.check({"tool_name": "rm_rf", "args": {}}).allowed  # False — escalated, never silently run
 ```
 
-The three primitives (`jabr`, `muqabalah`, `qadiya`) are not yet on PyPI, so
-`preflight` and the tool gate are **not** available from a bare `pip install mizan`
-— calling them without the primitives raises a clear error telling you to install
-them. Install from git:
+The pipeline builds on five primitives, each a standalone PyPI package (part of the
+Mizan stack). A bare `pip install mizan` gives the scanner only; the extras pull the rest:
 
 ```bash
-pip install git+https://github.com/Moshe-ship/jabr.git \
-            git+https://github.com/Moshe-ship/muqabalah.git \
-            git+https://github.com/Moshe-ship/qadiya.git
+pip install "mizan[preflight]"   # jabr + muqabalah + qadiya (restore/balance/classify)
+pip install "mizan[verify]"      # toolproof-receipt (execution verification)
+pip install "mizan[all]"         # the whole pipeline, incl. mtg-guards + OTel export
 ```
 
-Or, in a dev tree (`mizan` adds local checkouts under `~/Projects` to `sys.path`),
-run `pip install -e ../jabr -e ../muqabalah -e ../qadiya -e .`.
+| Primitive | PyPI package | Imported as |
+| --- | --- | --- |
+| restore | [`jabr`](https://pypi.org/project/jabr/) | `jabr` |
+| balance | [`muqabalah`](https://pypi.org/project/muqabalah/) | `muqabalah` |
+| classify | [`qadiya`](https://pypi.org/project/qadiya/) | `qadiya` |
+| constrain | [`mtg-guards`](https://pypi.org/project/mtg-guards/) | `mtg` |
+| verify | [`toolproof-receipt`](https://pypi.org/project/toolproof-receipt/) | `toolproof` |
 
 ### End to end — one receipt across all five stages
 

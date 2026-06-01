@@ -10,8 +10,6 @@ instead of a bare ``ModuleNotFoundError: No module named 'jabr'``.
 
 from __future__ import annotations
 
-_GIT_OWNER = "https://github.com/Moshe-ship"
-
 #: The optional primitive packages, in pipeline order.
 PRIMITIVES = ("jabr", "muqabalah", "qadiya", "mtg", "toolproof")
 
@@ -22,9 +20,10 @@ class MissingPrimitiveError(ImportError):
 
 def missing_primitive(name: str, feature: str) -> "MissingPrimitiveError":
     """Build a :class:`MissingPrimitiveError` naming *name* and how to install it."""
+    extra = "verify" if feature == "verify" else "preflight"
     return MissingPrimitiveError(
-        f"mizan.{feature} requires '{name}', which is not yet on PyPI. "
-        f"Install it from git:\n"
-        f"    pip install git+{_GIT_OWNER}/{name}.git\n"
+        f"mizan.{feature} requires the '{name}' package, which isn't installed. "
+        f"Install the reliability pipeline from PyPI:\n"
+        f"    pip install 'mizan[{extra}]'   # or: pip install 'mizan[all]'\n"
         f"(The mizan.mcpscan scanner works without any primitives.)"
     )

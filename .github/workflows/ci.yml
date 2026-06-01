@@ -25,22 +25,12 @@ jobs:
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install primitives from git
-        # The preflight/verify pipeline depends on jabr/muqabalah/qadiya/mtg/
-        # toolproof, which are not yet on PyPI. CI installs them from git so the
-        # full suite runs exactly as the README's "install from git" path —
-        # without them, mizan.preflight cannot import (it needs jabr).
+      - name: Install mizan + full pipeline from PyPI
+        # The primitives are on PyPI now, so the full suite installs the
+        # published packages via the [all] extra — exactly what a user gets.
         run: |
           python -m pip install --upgrade pip
-          # Pinned to commit SHAs for reproducible CI (bump deliberately).
-          python -m pip install \
-            "git+https://github.com/Moshe-ship/jabr.git@41dcd3a6126aa53ee08b4940b190fcd14bcb7ca7" \
-            "git+https://github.com/Moshe-ship/muqabalah.git@0a08e1478fc4a48c7b95df02390f2a7890b603a7" \
-            "git+https://github.com/Moshe-ship/qadiya.git@60af2656975f4356d9d28ea1b630941e17ce6d65" \
-            "git+https://github.com/Moshe-ship/mtg.git@91ce06df6ce10d94a051809014cedc36a5b525b8" \
-            "git+https://github.com/Moshe-ship/toolproof.git@6a4bb9f26fa91379f71848f05587d963dbc78e8b"
-      - name: Install mizan (with test + otel extras)
-        run: python -m pip install -e ".[test,otel]"
+          python -m pip install -e ".[all,test]"
       - name: Run tests
         run: python -m pytest -q
 
