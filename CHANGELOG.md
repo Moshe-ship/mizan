@@ -4,6 +4,19 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.6] — 2026-06-01
+
+### Added (all additive — `Receipt.to_dict()` unchanged)
+- **Receipt v0**: `Receipt.to_v0(secret=…)` emits the signed evidence document
+  defined in `docs/RECEIPT_SPEC.md` — hashed input/output, `decision`,
+  `execution`, `claim`, `verification`, ids/timestamp, and a signature envelope.
+- **`mizan verify` and `mizan diff` CLIs** (console script + `python -m mizan`),
+  dependency-free: structural validation + RFC 8785-aligned HMAC signature
+  check; full JSON-Schema validation when `jsonschema` is installed.
+- JSON Schema shipped as package data (`mizan/schemas/receipt-v0.schema.json`).
+- `examples/receipts/{passed,blocked,tampered}.json` are now code-generated
+  fixtures with a drift-guard test.
+
 ## [0.1.5] — 2026-06-01
 
 ### Changed

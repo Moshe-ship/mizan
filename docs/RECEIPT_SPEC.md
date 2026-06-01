@@ -15,7 +15,8 @@ addressable, time-stamped, and tamper-evident as a single bundle.
 - **Status:** draft / public-alpha. Fields may be added (never removed or
   re-typed) within `mizan.receipt/0`. See [Compatibility](#compatibility).
 - **Media type:** `application/vnd.mizan.receipt+json`
-- **JSON Schema:** [`schema/receipt-v0.schema.json`](../schema/receipt-v0.schema.json)
+- **JSON Schema:** [`mizan/schemas/receipt-v0.schema.json`](../mizan/schemas/receipt-v0.schema.json) (shipped as package data)
+- **Tooling:** `mizan verify receipt.json` · `mizan diff a.json b.json` (dependency-free)
 
 ---
 
@@ -64,12 +65,20 @@ addressable, time-stamped, and tamper-evident as a single bundle.
 ## 3. Canonical form & signing
 
 The signature is computed over the **canonical JSON** of the entire Receipt
-**with the `signature` field removed**:
+**with the `signature` field removed**. Canonicalization is **RFC 8785 (JSON
+Canonicalization Scheme) aligned**, constrained to the receipt value space so a
+JS verifier and a Python signer can never disagree:
 
 1. Remove `signature`.
-2. Serialize as JSON with **sorted keys**, UTF-8, `ensure_ascii=false`, no
-   insignificant whitespace (`separators=(",", ":")`).
-3. `value = HEX( HMAC_SHA256(key, canonical_bytes) )`.
+2. **No floats.** Receipts use only objects, arrays, strings, integers,
+   booleans, and null. A float in the canonical form is an error (the reference
+   implementation raises) — this removes the one real cross-language ambiguity
+   (number formatting). Counts like `changes` are integers.
+3. Object keys are sorted by Unicode code point. v0 keys are ASCII, so this
+   coincides with RFC 8785's UTF-16 code-unit ordering.
+4. Serialize as UTF-8 JSON, `ensure_ascii=false`, no insignificant whitespace
+   (`separators=(",", ":")`).
+5. `value = HEX( HMAC_SHA256(key, canonical_bytes) )`.
 
 Verification recomputes the same canonical form and compares in constant time.
 `algorithm` is fixed to `HMAC-SHA256` in v0; `key_id` names the secret used so
@@ -126,22 +135,24 @@ no longer matches its canonical form — `mizan verify` returns non-zero.
 
 Verifiers MUST ignore unknown top-level fields (forward-compatible).
 
-## 8. Conformance — what `mizan` 0.1.x emits today vs v0
+## 8. Conformance
 
-Honest delta, so this spec describes reality plus a small, named gap:
+As of **mizan 0.1.6**, `Receipt.to_v0(secret=…)` emits the full v0 document
+above, and `mizan verify` / `mizan diff` validate it — both dependency-free.
+This is **additive**: `Receipt.to_dict()` is unchanged and still returns the
+legacy shape (raw `input`/`output`, `ok`/`blocked_by`, `stages`). A future
+major (0.2.0) may make v0 the default output.
 
-| v0 field | In `mizan` 0.1.x? |
+| Capability | Status in 0.1.6 |
 |---|---|
-| `stages[]` (stage/tool/ok/changes/detail) | **Yes** — `Receipt.to_dict()` |
-| `ok` / `blocked_by` | **Yes** (derived; `blocked_by` retained as a convenience) |
-| HMAC-SHA256 signature | **Yes** — `Receipt.signature(secret)`, but **detached** (not enveloped) |
-| OTel export of stages + signature | **Yes** — `mizan.otel` |
-| `input`/`output` as **hashes** | **No** — currently raw strings → **v0 change** |
-| `schema_version`,`receipt_id`,`created_at` | **No** → v0 adds |
-| `subject`,`decision`,`execution`,`claim`,`verification` normalized at top level | **Partial** — data exists inside `stages[].detail` (toolproof/qadiya); v0 promotes it |
-| `signature` **envelope** (algorithm/key_id/value) | **No** — v0 wraps the existing hex |
+| `Receipt.to_v0(secret, …)` → signed v0 doc | ✅ `mizan/receipt_v0.py` |
+| Hashed `input`/`output` (+ optional `summary`) | ✅ (privacy default: `redact=True`) |
+| `schema_version`/`receipt_id`/`created_at`/signature envelope | ✅ |
+| `decision`/`verification` derived from stages; `execution`/`claim` from verify stage | ✅ (overridable) |
+| `mizan verify` (structural + JCS-canonical HMAC check) | ✅ exit 0/1/2/3/4 |
+| `mizan diff` | ✅ |
+| Full JSON-Schema validation | ✅ when `jsonschema` is installed; structural check otherwise |
+| Legacy `Receipt.to_dict()` / `Receipt.signature()` | ✅ unchanged (additive) |
 
-Reaching full v0 conformance is a contained change to `mizan/receipt.py`
-(add the envelope + ids/timestamp + hash input/output + a normalized
-projection from stages) plus a `mizan verify` CLI. Until then, `mizan` emits a
-**v0-compatible subset**; this document is the target the next release builds to.
+`mizan verify` exit codes: `0` ok · `1` invalid/schema · `2` tampered ·
+`3` unsigned · `4` signed-but-no-secret.

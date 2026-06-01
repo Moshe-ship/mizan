@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mizan"
-version = "0.1.5"
+version = "0.1.6"
 description = "The reliability scale for AI agents: restore, balance, classify, constrain, verify, weigh."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -58,5 +58,11 @@ all = [
     "opentelemetry-sdk>=1.20",
 ]
 
+[project.scripts]
+mizan = "mizan.__main__:main"
+
 [tool.setuptools]
 packages = ["mizan"]
+
+[tool.setuptools.package-data]
+mizan = ["schemas/*.json"]

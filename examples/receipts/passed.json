@@ -10,11 +10,11 @@
   },
   "input": {
     "hash": "sha256:b58334959ea90db5676676835f8bfdb8a0b92d6a45d0cdd7081030b0a0fb40f4",
-    "summary": "Arabic booking request (redacted)"
+    "summary": "احجز رحلة من الرياض إلى جدة"
   },
   "output": {
     "hash": "sha256:36614338d5480aca16c7bb37bcdf7c7d95ec5c48e13c90b91b0b9d6dec6e3bdc",
-    "summary": null
+    "summary": "booking confirmed"
   },
   "decision": {
     "action": "allowed",
@@ -81,13 +81,23 @@
       "ok": true,
       "changes": 0,
       "detail": {
-        "verdict": "VERIFIED"
+        "verdict": "VERIFIED",
+        "execution": {
+          "tool": "book_flight",
+          "args_hash": "sha256:1c8c0d477850ab4063fd72dcdb68e9cde78b25bed028803c57111734379dd9fc",
+          "result_hash": "sha256:b87e0cdf7b48abd7486ddc6338e5c7af4f776fb4e17dcc41707e41467981b8ea",
+          "observed_status": "ok"
+        },
+        "claim": {
+          "tool": "book_flight",
+          "result_hash": "sha256:b87e0cdf7b48abd7486ddc6338e5c7af4f776fb4e17dcc41707e41467981b8ea"
+        }
       }
     }
   ],
   "signature": {
     "algorithm": "HMAC-SHA256",
     "key_id": "demo",
-    "value": "03eeea45fd2cb2f3c21aac0784f93340a843e96bd487cd3b1ed14beccfd5a86b"
+    "value": "37ab35ff14c4277ec9cb6f2134769ac838764e1cb4901f07090388d360b59974"
   }
 }

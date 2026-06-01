@@ -23,6 +23,33 @@ This repository is the spine for the Mizan stack. It does not replace the existi
 
 Agents need a scale before autonomy. Every prompt transformation should be restorable, every contradiction should be balanced or escalated, every tool argument should be constrained, and every execution should leave a receipt that can be weighed against what the agent claims.
 
+## The Receipt — signed evidence for agent actions
+
+**Mizan is a signed evidence layer for agent actions:** it records what the agent
+saw, what policy allowed, what tool ran, what result came back, and whether the
+claim matches execution. One agent turn → one portable, signed, replayable
+[**Receipt**](docs/RECEIPT_SPEC.md) an auditor can verify after the fact.
+
+```python
+from mizan.receipt import Receipt, StageRecord
+
+receipt = Receipt("book a flight", "ok", stages=(
+    StageRecord("scan", "mcpscan", ok=True),
+    StageRecord("verify", "toolproof", ok=True, detail={"verdict": "VERIFIED"}),
+))
+doc = receipt.to_v0(secret="…", key_id="prod-1")   # signed v0 evidence document
+```
+
+```bash
+mizan verify receipt.json --secret-env MIZAN_RECEIPT_SECRET   # exit 0 / 2 (tampered)
+mizan diff before.json after.json
+```
+
+The Receipt emits OTel-compatible spans **and** an HMAC signature — the
+tamper-evidence OpenTelemetry does not provide, satisfying OWASP MCP08's
+recommended OTel + cryptographic-hashing controls. Spec, JSON Schema, and
+passed/blocked/tampered examples: [docs/RECEIPT_SPEC.md](docs/RECEIPT_SPEC.md).
+
 ## Quickstart — scan an MCP server for poisoning
 
 The scanner is dependency-free (detectors are vendored), so it runs from a bare install — no extras needed:

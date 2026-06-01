@@ -5,12 +5,12 @@
   "subject": {
     "agent_id": "agent-demo",
     "model": "claude-opus-4-8",
-    "run_id": "run-001",
+    "run_id": "run-002",
     "tool": null
   },
   "input": {
-    "hash": "sha256:b58334959ea90db5676676835f8bfdb8a0b92d6a45d0cdd7081030b0a0fb40f4",
-    "summary": "Arabic booking request (redacted)"
+    "hash": "sha256:a4b5e39b6b7a53289cf8ca992b2cfbbf9bf13f7d645c71811810317c2327bfff",
+    "summary": null
   },
   "output": {
     "hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -18,7 +18,7 @@
   },
   "decision": {
     "action": "blocked",
-    "reason": "scan: R-BIDI-001 in tool 'get_weather'"
+    "reason": "scan:mcpscan refused"
   },
   "execution": null,
   "claim": null,
@@ -39,6 +39,6 @@
   "signature": {
     "algorithm": "HMAC-SHA256",
     "key_id": "demo",
-    "value": "0e302eb20190d3681e751f0183d8bdaf7e4155512c84613fc71f19087c1879fa"
+    "value": "6c59a007f01cbc2eb6d4dfb673804c5e9e2562fd3b33c7c874156cd45f5172f6"
   }
 }

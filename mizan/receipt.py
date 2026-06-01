@@ -108,3 +108,13 @@ class Receipt:
         import hmac
 
         return hmac.compare_digest(self.signature(secret), sig)
+
+    def to_v0(self, **kwargs: Any) -> dict[str, Any]:
+        """Project this receipt into the signed v0 document (see RECEIPT_SPEC.md).
+
+        Additive: this does not affect ``to_dict()``. Pass ``secret=...`` to
+        sign; see :func:`mizan.receipt_v0.project` for all options.
+        """
+        from mizan import receipt_v0
+
+        return receipt_v0.project(self, **kwargs)
