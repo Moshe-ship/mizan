@@ -75,9 +75,15 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           export VERSION
           echo "Verifying mizan $VERSION on PyPI"
-          for i in $(seq 1 12); do
-            if curl -sf "https://pypi.org/pypi/mizan/$VERSION/json" -o /tmp/pj.json; then break; fi
-            echo "  not on index yet, waiting…"; sleep 15
+          # Poll until BOTH the wheel AND the sdist are indexed — they can
+          # propagate to the JSON seconds apart, so waiting only for the version
+          # to appear (any one file) is a flaky false-negative.
+          for i in $(seq 1 20); do
+            if curl -sf "https://pypi.org/pypi/mizan/$VERSION/json" -o /tmp/pj.json \
+               && python -c "import json,sys; f=[u['filename'] for u in json.load(open('/tmp/pj.json'))['urls']]; sys.exit(0 if any(x.endswith('.whl') for x in f) and any(x.endswith('.tar.gz') for x in f) else 1)"; then
+              break
+            fi
+            echo "  waiting for both wheel + sdist on the index…"; sleep 15
           done
           python - <<'PY'
           import json, os
@@ -88,7 +94,12 @@ jobs:
           print("files OK:", files)
           PY
           for f in $(python -c "import json;print(' '.join(u['filename'] for u in json.load(open('/tmp/pj.json'))['urls']))"); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/integrity/mizan/$VERSION/$f/provenance")
+            # provenance can also lag — retry per file
+            code=000
+            for j in $(seq 1 8); do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/integrity/mizan/$VERSION/$f/provenance")
+              [ "$code" = "200" ] && break || sleep 10
+            done
             echo "provenance $f: HTTP $code"
             [ "$code" = "200" ] || { echo "::error::missing provenance for $f"; exit 1; }
           done
