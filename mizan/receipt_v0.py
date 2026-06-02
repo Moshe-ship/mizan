@@ -33,12 +33,34 @@ INVALID = "invalid"            # structural/schema failure
 TAMPERED = "tampered"          # signature present but does not match
 UNSIGNED = "unsigned"          # signature value is null
 NO_SECRET = "no_secret"        # signed receipt but no secret provided to check
+CLAIM_MISMATCH = "claim_mismatch"  # signature valid, but agent claim != execution
 
-_STATUS_EXIT = {OK: 0, INVALID: 1, TAMPERED: 2, UNSIGNED: 3, NO_SECRET: 4}
+_STATUS_EXIT = {OK: 0, INVALID: 1, TAMPERED: 2, UNSIGNED: 3, NO_SECRET: 4, CLAIM_MISMATCH: 5}
 
 
 def status_exit_code(status: str) -> int:
     return _STATUS_EXIT.get(status, 1)
+
+
+def attest_claim(execution, claim) -> str:
+    """Does an agent's `claim` match the observed `execution`?
+
+    Returns one of: ``verified`` (same tool + same result hash), ``tampered``
+    (claimed a different tool or a different result — the agent lied),
+    ``unverified`` (tool matches but no result was claimed / nothing observed),
+    or ``not_applicable`` (no claim). Pure hash comparison — dependency-free.
+    """
+    if claim is None:
+        return "not_applicable"
+    if execution is None:
+        return "unverified"
+    if claim.get("tool") != execution.get("tool"):
+        return "tampered"
+    if claim.get("result_hash") is None:
+        return "unverified"
+    if claim.get("result_hash") != execution.get("result_hash"):
+        return "tampered"
+    return "verified"
 
 
 # --------------------------------------------------------------------------- #
@@ -143,15 +165,20 @@ def project(
     verify_stage = next((s for s in stages if s.stage == "verify"), None)
     vdetail = dict(verify_stage.detail) if verify_stage is not None else {}
 
-    if verification is None:
-        if verify_stage is None:
-            verification = "not_applicable"
-        else:
-            verification = _VERDICT_MAP.get(str(vdetail.get("verdict", "")).upper(), "unverified")
     if execution is None:
         execution = vdetail.get("execution")
     if claim is None:
         claim = vdetail.get("claim")
+
+    if verification is None:
+        if verify_stage is not None:
+            # a verify stage (e.g. toolproof) is authoritative for the verdict
+            verification = _VERDICT_MAP.get(str(vdetail.get("verdict", "")).upper(), "unverified")
+        elif execution is not None and claim is not None:
+            # no verify stage but we have both sides → compare them directly
+            verification = attest_claim(execution, claim)
+        else:
+            verification = "not_applicable"
 
     doc: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -170,6 +197,35 @@ def project(
     if secret is not None:
         doc["signature"]["value"] = sign(doc, secret)
     return doc
+
+
+def hash_value(value: Any) -> str:
+    """Hash an arbitrary (JSON-able) value the same way args/results are hashed."""
+    return hash_text(json.dumps(value, sort_keys=True, ensure_ascii=False, default=str))
+
+
+def attest(doc: Mapping[str, Any], *, claimed_tool: str, claimed_result: Any,
+           secret: Optional[str] = None, key_id: Optional[str] = None) -> dict[str, Any]:
+    """Attest an agent's claim against an existing execution receipt.
+
+    Returns a NEW receipt with ``claim`` filled, ``verification`` set to the
+    result of comparing the claim against the receipt's ``execution``, and the
+    signature recomputed. This is the claim-vs-execution layer: it turns a
+    signed *execution* receipt into a signed *action-truth* receipt.
+    """
+    new = json.loads(json.dumps(doc))  # deep copy
+    claim = {"tool": claimed_tool, "result_hash": hash_value(claimed_result)}
+    new["claim"] = claim
+    new["verification"] = attest_claim(new.get("execution"), claim)
+    sig = new.get("signature") or {}
+    new["signature"] = {
+        "algorithm": SIGNATURE_ALGORITHM,
+        "key_id": key_id if key_id is not None else sig.get("key_id"),
+        "value": None,
+    }
+    if secret is not None:
+        new["signature"]["value"] = sign(new, secret)
+    return new
 
 
 # --------------------------------------------------------------------------- #

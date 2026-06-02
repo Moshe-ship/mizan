@@ -4,7 +4,8 @@ Dependency-free: structural validation + HMAC signature checking work on a bare
 `pip install mizan`. Full JSON-Schema validation runs additionally if
 `jsonschema` is installed.
 
-Exit codes (verify): 0 ok · 1 invalid/schema · 2 tampered · 3 unsigned · 4 no-secret.
+Exit codes (verify): 0 ok · 1 invalid/schema · 2 tampered (signature) ·
+3 unsigned · 4 no-secret · 5 claim-mismatch (agent claim != execution).
 """
 
 from __future__ import annotations
@@ -53,7 +54,23 @@ def cmd_verify(args: Any) -> int:
     verif = receipt.get("verification", "?")
 
     if status == receipt_v0.OK:
-        print(f"✓ {rid}: signature VALID · decision={decision} · verification={verif}")
+        # Signature holds. Now: does the agent's claim match observed execution?
+        execution, claim = receipt.get("execution"), receipt.get("claim")
+        if execution and claim:
+            recomputed = receipt_v0.attest_claim(execution, claim)
+            if verif == "verified" and recomputed != "verified":
+                # signed receipt asserts "verified" but the hashes disagree
+                print(f"✗ {rid}: DISHONEST — verification says 'verified' but the claim "
+                      f"does not match execution ({recomputed})")
+                return receipt_v0.status_exit_code(receipt_v0.INVALID)
+        if verif == "tampered":
+            print(f"✗ {rid}: signature VALID, but the agent's CLAIM does NOT match execution "
+                  f"— the agent lied about the result (claim mismatch)")
+            if getattr(args, "allow_claim_mismatch", False):
+                print("  accepted (--allow-claim-mismatch)")
+                return 0
+            return receipt_v0.status_exit_code(receipt_v0.CLAIM_MISMATCH)
+        print(f"✓ {rid}: signature VALID · decision={decision} · claim={verif}")
         return 0
     if status == receipt_v0.TAMPERED:
         print(f"✗ {rid}: signature MISMATCH — receipt was modified after signing (TAMPERED)")

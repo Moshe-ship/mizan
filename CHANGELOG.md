@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.12] — 2026-06-01
+
+### Added — claim-vs-execution ("signed action truth")
+- `receipt_v0.attest_claim(execution, claim)` and `receipt_v0.attest(receipt,
+  claimed_tool=…, claimed_result=…, secret=…)`: weigh what an agent *claims* it
+  did against what Mizan *observed*. Pure hash comparison, dependency-free.
+- `to_v0` now auto-computes `verification` from `execution`+`claim` when there's
+  no toolproof verify stage.
+- **`mizan verify` enforces it**: exit `5` when the agent's claim doesn't match
+  execution (`--allow-claim-mismatch` to override), and exit `1` if a signed
+  receipt forges `verification: verified` while the hashes disagree (a signer
+  cannot lie about the verdict).
+- `examples/attest_claim.py` (bare install) + tests.
+
 ## [0.1.11] — 2026-06-01
 
 ### Added

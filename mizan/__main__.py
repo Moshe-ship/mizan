@@ -24,6 +24,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="env var holding the HMAC secret (default: MIZAN_RECEIPT_SECRET)",
     )
     pv.add_argument("--allow-unsigned", action="store_true", help="exit 0 on a valid but unsigned receipt")
+    pv.add_argument("--allow-claim-mismatch", action="store_true",
+                    help="exit 0 even when the agent's claim does not match execution")
 
     pd = sub.add_parser("diff", help="compare two receipts")
     pd.add_argument("a", help="path to receipt A")

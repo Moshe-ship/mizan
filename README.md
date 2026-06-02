@@ -71,11 +71,11 @@ def get_weather(city: str) -> dict:
     return {"city": city, "temp": 72}
 ```
 
-> **Scope:** the adapter records and signs the *observed* tool execution
-> (`verification: not_applicable`). `mizan verify` proves the receipt was signed
-> and not tampered with — **not** that an agent's later *claim* matches what ran.
-> Claim-vs-execution is a separate step (the `verify` stage, backed by
-> `toolproof-receipt`).
+> **Scope:** the adapter records and signs the *observed* tool execution. To also
+> prove an agent's later *claim* matches what ran, `receipt_v0.attest(receipt,
+> claimed_tool=…, claimed_result=…)` fills the claim and `mizan verify` weighs it —
+> exit `5` if the agent lied, and a signer cannot forge `verified` on mismatched
+> hashes (exit `1`). See [`examples/attest_claim.py`](examples/attest_claim.py).
 
 ## Quickstart — scan an MCP server for poisoning
 
@@ -322,14 +322,14 @@ whole pipeline; the **Receipt spec is frozen at v0** ([docs/RECEIPT_SPEC.md](doc
 with `mizan verify`; every repo has live CI; and the OpenAI Agents SDK adapter
 emits a signed receipt per tool call.
 
-Done since: a reproducible, three-split benchmark ([docs/MCP_POISONING_BENCHMARK.md](docs/MCP_POISONING_BENCHMARK.md),
-`python benchmark/run.py`) — per-category catch/miss/false-positive, **0 hard false
-positives**, held-out misses listed honestly. Mizan-only numbers; no competitor claims.
+Done since: a reproducible, three-split benchmark ([docs/MCP_POISONING_BENCHMARK.md](docs/MCP_POISONING_BENCHMARK.md));
+and a **claim-vs-execution layer** — `receipt_v0.attest(...)` weighs an agent's claim
+against the signed execution receipt, and `mizan verify` enforces it (the agent lied →
+exit 5; a forged `verified` → exit 1). "Signed receipt integrity" became "signed action truth."
 
 Next:
 1. **Real `mcp-scan` head-to-head** (the documented follow-up): pin its version, document the install + descriptor conversion, run the same corpus, publish the exact command + output. Until then no competitor numbers are claimed.
 2. Harden `mcpscan` on the held-out misses (fullwidth-Latin homoglyphs, keyword-free English exfil), then grow the corpus.
-3. A claim-vs-execution layer: compare an agent's claimed tool result against the signed execution Receipt (the `verify` stage / `toolproof-receipt`), so `mizan verify` can also attest *the agent did not lie about the result*.
 
 ## One-Line Pitch
 

@@ -152,7 +152,29 @@ major (0.2.0) may make v0 the default output.
 | `mizan verify` (structural + JCS-canonical HMAC check) | ✅ exit 0/1/2/3/4 |
 | `mizan diff` | ✅ |
 | Full JSON-Schema validation | ✅ when `jsonschema` is installed; structural check otherwise |
+| **Claim-vs-execution** (`attest`, `attest_claim`) | ✅ dependency-free; `mizan verify` checks it |
 | Legacy `Receipt.to_dict()` / `Receipt.signature()` | ✅ unchanged (additive) |
 
-`mizan verify` exit codes: `0` ok · `1` invalid/schema · `2` tampered ·
-`3` unsigned · `4` signed-but-no-secret.
+`mizan verify` exit codes: `0` ok · `1` invalid/schema · `2` tampered (signature) ·
+`3` unsigned · `4` signed-but-no-secret · `5` claim-mismatch.
+
+## 9. Claim vs execution — signed action truth
+
+`execution` is what Mizan **observed** a tool do; `claim` is what the agent
+**says** it did. `verification` is the comparison:
+
+- `verified` — `claim.tool == execution.tool` and `claim.result_hash == execution.result_hash`.
+- `tampered` — the claim names a different tool or a different result: **the agent lied**.
+- `unverified` — a claim exists but cannot be checked (no result claimed, or nothing observed).
+- `not_applicable` — no claim.
+
+`receipt_v0.attest(receipt, claimed_tool=…, claimed_result=…, secret=…)` takes a
+signed *execution* receipt and returns a re-signed receipt with the claim filled
+and `verification` computed — turning execution evidence into **action truth**.
+
+`mizan verify` enforces it: a signed receipt whose `verification` is `verified`
+**must** actually have matching hashes, or verify exits `1` (a signer cannot
+forge "verified"). A `tampered` claim (the agent lied) exits `5` unless
+`--allow-claim-mismatch`. This is the layer the OpenAI adapter alone does not
+provide — the adapter records execution; `attest` + `mizan verify` weigh the
+claim against it.
