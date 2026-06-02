@@ -69,8 +69,33 @@ def test_reordered_entries_break_chain(tmp_path):
     assert verify_log(str(p))[0] is False
 
 
-def _args(log, secret_env="MIZAN_RECEIPT_SECRET", public_key=None):
-    return types.SimpleNamespace(log=str(log), secret_env=secret_env, public_key=public_key)
+def test_tail_truncation_needs_an_anchor(tmp_path):
+    p = tmp_path / "a.jsonl"
+    log = _build(p, 4)
+    head, count = log.head_digest(), len(log)
+    # drop the last entry — the remaining prefix is a valid chain from genesis
+    lines = [json.loads(l) for l in p.read_text().splitlines()][:-1]
+    _rewrite(p, lines)
+    assert verify_log(str(p))[0] is True                         # bare: undetectable
+    assert verify_log(str(p), expect_count=count)[0] is False    # anchor catches it
+    assert verify_log(str(p), expect_head=head)[0] is False
+
+
+def _args(log, secret_env="MIZAN_RECEIPT_SECRET", public_key=None,
+          expect_head=None, expect_count=None):
+    return types.SimpleNamespace(log=str(log), secret_env=secret_env, public_key=public_key,
+                                 expect_head=expect_head, expect_count=expect_count)
+
+
+def test_cli_anchor_detects_tail_truncation(tmp_path, monkeypatch):
+    p = tmp_path / "a.jsonl"
+    log = _build(p, 4)
+    count = len(log)
+    monkeypatch.delenv("MIZAN_RECEIPT_SECRET", raising=False)
+    lines = [json.loads(l) for l in p.read_text().splitlines()][:-1]
+    _rewrite(p, lines)
+    assert cmd_verify_log(_args(p)) == 0                      # bare CLI: passes
+    assert cmd_verify_log(_args(p, expect_count=count)) == 1  # anchored: fails
 
 
 def test_cli_chain_only_and_with_signatures(tmp_path, monkeypatch):

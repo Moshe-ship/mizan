@@ -4,6 +4,16 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.19] — 2026-06-02
+
+### Changed
+- **Precise tamper-evidence wording + tail-truncation anchoring.** A bare hash
+  chain detects edits, insertions, reorders, and *middle* removals — but **tail
+  truncation** leaves a valid prefix from genesis, so it needs an external
+  anchor. `verify_log(...)` and `mizan verify-log` now take `--expect-head` /
+  `--expect-count` to detect it; `verify-log` also prints the current head digest
+  to anchor. README/docstring/AUDIT_STORAGE wording corrected accordingly.
+
 ## [0.1.18] — 2026-06-02
 
 ### Added — append-only audit trails (production gate #3)

@@ -191,7 +191,11 @@ def cmd_verify_log(args: Any) -> int:
     each receipt's signature. Exit: 0 ok · 1 chain broken · 2 a signature failed."""
     from mizan import chain
 
-    ok, problems = chain.verify_log(args.log)
+    ok, problems = chain.verify_log(
+        args.log,
+        expect_head=getattr(args, "expect_head", None),
+        expect_count=getattr(args, "expect_count", None),
+    )
     try:
         with open(args.log, "r", encoding="utf-8") as fh:
             links = [json.loads(l) for l in fh if l.strip()]
@@ -200,11 +204,16 @@ def cmd_verify_log(args: Any) -> int:
         return 1
 
     if not ok:
-        print(f"✗ chain BROKEN ({len(problems)} problem(s)):")
+        print(f"✗ chain check FAILED ({len(problems)} problem(s)):")
         for p in problems[:20]:
             print(f"    - {p}")
         return 1
-    print(f"✓ chain intact: {len(links)} link(s), unbroken from genesis")
+    anchored = getattr(args, "expect_head", None) or getattr(args, "expect_count", None)
+    head = links[-1]["digest"] if links else chain.GENESIS
+    print(f"✓ chain intact: {len(links)} link(s), unbroken from genesis"
+          + (" + matches anchor" if anchored else ""))
+    if not anchored:
+        print(f"  head digest (anchor this to detect tail truncation): {head}")
 
     secret = os.environ.get(args.secret_env)
     public_key = _read_public_key(getattr(args, "public_key", None))

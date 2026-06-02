@@ -41,10 +41,18 @@ mizan verify-log audit.jsonl --secret-env MIZAN_RECEIPT_SECRET # + every signatu
 mizan verify-log audit.jsonl --public-key key.json             # + every signature (Ed25519)
 ```
 
-Exit codes: `0` ok · `1` chain broken · `2` a receipt signature failed.
+Exit codes: `0` ok · `1` chain broken / anchor mismatch · `2` a receipt signature failed.
 
 The log is plain JSONL — each line is `{seq, prev, digest, receipt}` — so it
 streams to anything without this library.
+
+**One gap a bare chain cannot close: tail truncation.** Dropping the most recent
+entries leaves a still-valid prefix from genesis, so it verifies as intact. To
+detect it, verify against an anchored head digest / count (see §3):
+
+```bash
+mizan verify-log audit.jsonl --expect-head <hex> --expect-count <n>
+```
 
 ## 3. Store it write-once, and anchor the head
 

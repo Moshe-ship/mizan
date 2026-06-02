@@ -39,6 +39,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="also verify each receipt's HMAC signature using this env var")
     pl.add_argument("--public-key", metavar="FILE",
                     help="also verify each receipt's Ed25519 signature with this public key")
+    pl.add_argument("--expect-head", metavar="HEX",
+                    help="anchored head digest — detects tail truncation/alteration")
+    pl.add_argument("--expect-count", type=int, metavar="N",
+                    help="anchored link count — detects tail truncation/extension")
 
     pd = sub.add_parser("diff", help="compare two receipts")
     pd.add_argument("a", help="path to receipt A")

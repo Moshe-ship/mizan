@@ -1,8 +1,14 @@
 """Append-only, hash-chained receipt log — tamper-evidence for the *sequence*.
 
-A signature proves each receipt is intact. A hash chain proves the **log** was
-not reordered, truncated, or had entries inserted: each link commits to the
-previous link's digest, so any edit breaks the chain from that point on.
+A signature proves each receipt is intact. A hash chain makes the **log**
+tamper-evident: edits, insertions, reorders, and **middle** removals break the
+chain, because each link commits to the previous link's digest.
+
+One thing a bare chain cannot see on its own: **tail truncation**. Dropping the
+most recent entries leaves a still-valid prefix from genesis, so it verifies as
+intact. To detect it you must compare against an **external anchor** — pass
+``expect_head`` (the head digest you recorded elsewhere) and/or ``expect_count``
+to :func:`verify_log`, and/or store the log on write-once media.
 
     log = ReceiptLog("audit.jsonl")
     log.append(receipt_a)
@@ -17,7 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any
+from typing import Any, Optional
 
 from mizan.receipt_v0 import canonicalize
 
@@ -73,11 +79,18 @@ class ReceiptLog:
         return record
 
 
-def verify_log(path: str) -> tuple[bool, list[str]]:
+def verify_log(
+    path: str,
+    *,
+    expect_head: Optional[str] = None,
+    expect_count: Optional[int] = None,
+) -> tuple[bool, list[str]]:
     """Verify the chain is unbroken from genesis. Returns (ok, problems).
 
     Detects per-link receipt tampering, a broken/forged `prev` link, a removed
-    or reordered entry (via `seq` and link recomputation), and insertion.
+    or reordered **middle** entry, and insertion. **Tail truncation** is only
+    detectable against an external anchor: pass ``expect_head`` (the head digest
+    recorded elsewhere) and/or ``expect_count`` (the expected number of links).
     Signature verification is separate — pass each link's `receipt` to
     ``mizan.receipt_v0.verify``.
     """
@@ -98,4 +111,15 @@ def verify_log(path: str) -> tuple[bool, list[str]]:
         if rec.get("digest") != correct:
             problems.append(f"line {i}: digest mismatch — receipt or link tampered")
         expected_prev = correct  # anchor on the genesis-rooted correct chain
+
+    # Anchored checks — the only way to catch tail truncation/extension.
+    if expect_count is not None and len(lines) != expect_count:
+        problems.append(
+            f"log has {len(lines)} link(s), expected {expect_count} — tail truncated or extended"
+        )
+    if expect_head is not None and expected_prev != expect_head:
+        problems.append(
+            f"head digest {expected_prev[:12]}… != anchored {str(expect_head)[:12]}… "
+            f"— tail truncated or altered"
+        )
     return (not problems, problems)
