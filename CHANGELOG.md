@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.14] — 2026-06-02
+
+### Changed — scanner hardening (measured before/after)
+- `R-HOMO-001` now flags **fullwidth Latin letters/digits** (U+FF10–FF5A) — an
+  ASCII-lookalike obfuscation used to spell directives past keyword scanners
+  (e.g. `ｓｅｎｄ ａｌｌ ｆｉｌｅｓ`).
+- New `R-EXFIL-003` (semantic, medium): **keyword-free bulk exfiltration** — an
+  exfil verb + an all/every data scope + an external host (e.g. "transmit every
+  document … to an outside host"). Medium severity, so it cannot add a *hard*
+  false positive.
+- Benchmark: **held-out 14/16 → 16/16**, consistency 25/25 unchanged, and **0
+  new false positives** (still 0 hard / 5 soft). The two named held-out misses
+  (`v2-7`, `v2-8`) are now caught.
+
 ## [0.1.13] — 2026-06-01
 
 ### Fixed

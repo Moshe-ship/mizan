@@ -23,7 +23,7 @@ Poison descriptors with patterns the rules encode. Caught **25/25**.
 
 ## 2. Held-out adversarial (fresh variants)
 
-Variants **not** directly encoded — the honest generalization test. Caught **14/16**; misses are listed per family.
+Variants **not** directly encoded — the honest generalization test. Caught **16/16**; misses are listed per family.
 
 | family | total | caught | missed | generic scanners |
 |---|---|---|---|---|
@@ -31,10 +31,10 @@ Variants **not** directly encoded — the honest generalization test. Caught **1
 | `bidi` | 2 | 2 | 0 | Commonly covered (OWASP Prompt-Injection cheat sheet flags BiDi/RTL overrides) |
 | `codeswitch` | 1 | 1 | 0 | Rarely — Arabic/English embedded directives (Mizan depth) |
 | `cross-field` | 1 | 1 | 0 | Partially (multi-field dataflow is uneven across tools) |
-| `homoglyph` | 3 | 2 | 1 (v2-7) | Commonly covered (confusables/mixed-script detection is widespread) |
+| `homoglyph` | 3 | 3 | 0 | Commonly covered (confusables/mixed-script detection is widespread) |
 | `invisible` | 1 | 1 | 0 | Partially (zero-width often caught; ZWNJ-between-letters is subtler) |
 | `override` | 2 | 2 | 0 | Partially (imperative directives common; spacing/tab evasion subtler) |
-| `semantic` | 4 | 3 | 1 (v2-8) | Partially (English exfil keywords common; AR / synonyms / base64 subtler) |
+| `semantic` | 4 | 4 | 0 | Partially (English exfil keywords common; AR / synonyms / base64 subtler) |
 
 ## 3. Clean false-positive set (legit confusables)
 

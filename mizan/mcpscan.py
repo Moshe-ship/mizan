@@ -91,6 +91,24 @@ _DANGER_SIGNAL = re.compile(
     re.IGNORECASE,
 )
 
+# Fullwidth Latin letters / digits (U+FF10–FF19, FF21–FF3A, FF41–FF5A): an
+# ASCII-lookalike obfuscation used to spell directives past ASCII keyword
+# scanners (e.g. "ｓｅｎｄ ａｌｌ ｆｉｌｅｓ"). No legitimate tool description spells
+# words in fullwidth Latin, so this is a homoglyph signal.
+_FULLWIDTH = re.compile(r"[０-９Ａ-Ｚａ-ｚ]")
+
+# Bulk exfiltration to an external destination, without relying on the narrow
+# keyword list above: an exfil verb + an all/every data scope + an outside host.
+# Specific enough to stay advisory (medium) without exploding false positives.
+_EXFIL_EXTERNAL = re.compile(
+    r"(?:transmit|send|upload|forward|copy|export|exfiltrate|leak|post|push)\b"
+    r"[^\n]{0,40}\b(?:all|every|each|entire)\b[^\n]{0,25}"
+    r"(?:files?|documents?|data|records?|contents?|secrets?)"
+    r"[^\n]{0,40}\b(?:outside|external|remote|third[- ]party|another|unknown|attacker(?:'s)?)\b"
+    r"[^\n]{0,15}(?:host|server|endpoint|url|site|machine|party|domain|address|system)",
+    re.IGNORECASE,
+)
+
 
 def _snip(text: str, n: int = 60) -> str:
     t = text.replace("\n", " ")
@@ -149,12 +167,14 @@ def _rule_homoglyph(text: str) -> list[Finding]:
     a = uts39_analyze(text)
     b = detect_bidi_threats(text)
     conf = list(getattr(a, "confusable_codepoints", ()) or ())
-    if conf or b.homoglyphs or b.mixed_script_within_token:
+    fullwidth = _FULLWIDTH.findall(text)
+    if conf or b.homoglyphs or b.mixed_script_within_token or fullwidth:
         return [Finding(
             "R-HOMO-001", "homoglyph", "high",
-            "Confusable / mixed-script characters within tokens mimic a trusted tool name or instruction.",
-            evidence=f"confusables={len(conf)} homoglyphs={len(b.homoglyphs)} mixed_token={b.mixed_script_within_token}",
-            remediation="Normalize to UTS-39 skeleton and reject mixed-script tokens in names/critical fields.",
+            "Confusable / mixed-script / fullwidth-form characters mimic a trusted tool name or instruction.",
+            evidence=(f"confusables={len(conf)} homoglyphs={len(b.homoglyphs)} "
+                      f"mixed_token={b.mixed_script_within_token} fullwidth={len(fullwidth)}"),
+            remediation="Normalize to UTS-39 skeleton (NFKC) and reject mixed-script / fullwidth tokens in names/critical fields.",
         )]
     return []
 
@@ -211,6 +231,14 @@ def _rule_semantic(text: str) -> list[Finding]:
             "Tool metadata appears to instruct reading secrets / exfiltration / bypassing approval (advisory — confirm intent).",
             evidence=_snip(m.group(0)),
             remediation="Review the tool: legitimate security tools may mention these terms. Confirm with an LLM classifier before blocking.",
+        ))
+    elif (ext := _EXFIL_EXTERNAL.search(text)) is not None:
+        # keyword-free bulk exfiltration to an external destination
+        out.append(Finding(
+            "R-EXFIL-003", "semantic", "medium",
+            "Tool metadata describes moving all/every files or data to an external destination (advisory — confirm intent).",
+            evidence=_snip(ext.group(0)),
+            remediation="Confirm the tool legitimately needs to send bulk data off-host; prefer an LLM classifier before blocking.",
         ))
     ar = next((p for p in _EXFIL_AR if p in text), None)
     if ar:

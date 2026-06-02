@@ -327,9 +327,14 @@ and a **claim-vs-execution layer** — `receipt_v0.attest(...)` weighs an agent'
 against the signed execution receipt, and `mizan verify` enforces it (the agent lied →
 exit 5; a forged `verified` → exit 1). "Signed receipt integrity" became "signed action truth."
 
+Also done: hardened `mcpscan` on the two named held-out misses — fullwidth-Latin
+homoglyphs (`R-HOMO-001` now flags fullwidth forms) and keyword-free bulk exfil to
+an external host (`R-EXFIL-003`). The benchmark moved **held-out 14/16 → 16/16 with
+0 new false positives** (same 0 hard / 5 soft).
+
 Next:
 1. **Real `mcp-scan` head-to-head** (the documented follow-up): pin its version, document the install + descriptor conversion, run the same corpus, publish the exact command + output. Until then no competitor numbers are claimed.
-2. Harden `mcpscan` on the held-out misses (fullwidth-Latin homoglyphs, keyword-free English exfil), then grow the corpus.
+2. Grow the corpus with fresh adversarial variants (v3 held-out) so the next generalization number is earned on unseen attacks.
 
 ## One-Line Pitch
 
