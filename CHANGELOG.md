@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.17] — 2026-06-02
+
+### Added — Ed25519 asymmetric signing (additive; HMAC stays the default)
+- `mizan.signing` with `HmacSigner` (default, zero-dep) and `Ed25519Signer`
+  (`pip install "mizan[ed25519]"`). Sign with `Receipt.to_v0(signer=…)` or
+  `attest(…, signer=…)`; the signer holds the private key and an **auditor
+  verifies with only the public key** — verification never hands out signing authority.
+- `mizan keygen` generates an Ed25519 keypair (mode-600 file); `mizan verify
+  --public-key key.json` verifies Ed25519 receipts and **auto-detects** the
+  algorithm. New no-secret message for Ed25519.
+- Schema + validators accept `algorithm: Ed25519` (128-hex signature).
+- Fully gated: a bare `pip install mizan` keeps HMAC and needs no `cryptography`;
+  Ed25519 paths friendly-error to the extra. `examples/ed25519_signing.py`.
+
 ## [0.1.16] — 2026-06-02
 
 ### Changed

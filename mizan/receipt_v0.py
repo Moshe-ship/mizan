@@ -98,13 +98,35 @@ def sign(receipt: Mapping[str, Any], secret: str) -> str:
     return hmac.new(secret.encode("utf-8"), canonicalize(body), hashlib.sha256).hexdigest()
 
 
-def verify(receipt: Mapping[str, Any], secret: str) -> str:
-    """Return a status: OK / TAMPERED / UNSIGNED."""
-    value = (receipt.get("signature") or {}).get("value")
+def sign_with(receipt: Mapping[str, Any], signer) -> str:
+    """Sign the canonical receipt (minus ``signature``) with any Signer."""
+    return signer.sign(canonicalize(_body_for_signing(receipt)))
+
+
+def verify(receipt: Mapping[str, Any], secret: Optional[str] = None, *,
+           public_key: Optional[str] = None) -> str:
+    """Verify the signature; dispatches on ``signature.algorithm``.
+
+    Pass ``secret`` for HMAC-SHA256 or ``public_key`` (hex) for Ed25519.
+    Returns OK / TAMPERED / UNSIGNED / NO_SECRET (key missing) / INVALID.
+    """
+    sig = receipt.get("signature") or {}
+    value = sig.get("value")
     if not value:
         return UNSIGNED
-    expected = sign(receipt, secret)
-    return OK if hmac.compare_digest(expected, str(value)) else TAMPERED
+    from mizan import signing
+
+    message = canonicalize(_body_for_signing(receipt))
+    try:
+        ok = signing.verify_signature(
+            sig.get("algorithm"), message, str(value),
+            secret=secret, public_key_hex=public_key,
+        )
+    except signing.MissingKeyError:
+        return NO_SECRET
+    except ValueError:
+        return INVALID
+    return OK if ok else TAMPERED
 
 
 def hash_text(text: str) -> str:
@@ -143,6 +165,7 @@ def project(
     *,
     secret: Optional[str] = None,
     key_id: Optional[str] = None,
+    signer: Any = None,
     redact: bool = True,
     agent_id: Optional[str] = None,
     model: Optional[str] = None,
@@ -192,10 +215,16 @@ def project(
         "claim": dict(claim) if claim is not None else None,
         "verification": verification,
         "stages": [s.to_dict() for s in stages],
-        "signature": {"algorithm": SIGNATURE_ALGORITHM, "key_id": key_id, "value": None},
+        "signature": None,  # filled below
     }
-    if secret is not None:
-        doc["signature"]["value"] = sign(doc, secret)
+    if signer is None and secret is not None:
+        from mizan.signing import HmacSigner
+        signer = HmacSigner(secret, key_id)
+    algo = signer.algorithm if signer is not None else SIGNATURE_ALGORITHM
+    kid = signer.key_id if signer is not None else key_id
+    doc["signature"] = {"algorithm": algo, "key_id": kid, "value": None}
+    if signer is not None:
+        doc["signature"]["value"] = sign_with(doc, signer)
     return doc
 
 
@@ -205,26 +234,30 @@ def hash_value(value: Any) -> str:
 
 
 def attest(doc: Mapping[str, Any], *, claimed_tool: str, claimed_result: Any,
-           secret: Optional[str] = None, key_id: Optional[str] = None) -> dict[str, Any]:
+           secret: Optional[str] = None, key_id: Optional[str] = None,
+           signer: Any = None) -> dict[str, Any]:
     """Attest an agent's claim against an existing execution receipt.
 
     Returns a NEW receipt with ``claim`` filled, ``verification`` set to the
     result of comparing the claim against the receipt's ``execution``, and the
-    signature recomputed. This is the claim-vs-execution layer: it turns a
-    signed *execution* receipt into a signed *action-truth* receipt.
+    signature recomputed (HMAC via ``secret`` or any ``signer``, e.g. Ed25519).
+    This is the claim-vs-execution layer: it turns a signed *execution* receipt
+    into a signed *action-truth* receipt.
     """
     new = json.loads(json.dumps(doc))  # deep copy
     claim = {"tool": claimed_tool, "result_hash": hash_value(claimed_result)}
     new["claim"] = claim
     new["verification"] = attest_claim(new.get("execution"), claim)
-    sig = new.get("signature") or {}
-    new["signature"] = {
-        "algorithm": SIGNATURE_ALGORITHM,
-        "key_id": key_id if key_id is not None else sig.get("key_id"),
-        "value": None,
-    }
-    if secret is not None:
-        new["signature"]["value"] = sign(new, secret)
+    prev = new.get("signature") or {}
+    if signer is None and secret is not None:
+        from mizan.signing import HmacSigner
+        signer = HmacSigner(secret, key_id if key_id is not None else prev.get("key_id"))
+    algo = signer.algorithm if signer is not None else SIGNATURE_ALGORITHM
+    kid = (signer.key_id if signer is not None
+           else (key_id if key_id is not None else prev.get("key_id")))
+    new["signature"] = {"algorithm": algo, "key_id": kid, "value": None}
+    if signer is not None:
+        new["signature"]["value"] = sign_with(new, signer)
     return new
 
 
@@ -267,12 +300,15 @@ def structural_errors(receipt: Any) -> list[str]:
     if receipt.get("verification") not in _VERIF:
         errs.append("verification invalid")
     sig = receipt.get("signature")
-    if not isinstance(sig, dict) or sig.get("algorithm") != SIGNATURE_ALGORITHM:
-        errs.append("signature.algorithm must be HMAC-SHA256")
+    if not isinstance(sig, dict) or sig.get("algorithm") not in ("HMAC-SHA256", "Ed25519"):
+        errs.append("signature.algorithm must be HMAC-SHA256 or Ed25519")
     else:
         val = sig.get("value")
-        if val is not None and not (isinstance(val, str) and len(val) == 64):
-            errs.append("signature.value must be 64-hex or null")
+        # HMAC-SHA256 → 64 hex, Ed25519 → 128 hex; null = unsigned draft.
+        ok_len = {"HMAC-SHA256": 64, "Ed25519": 128}.get(sig["algorithm"])
+        if val is not None and not (isinstance(val, str) and len(val) == ok_len
+                                    and all(c in "0123456789abcdef" for c in val)):
+            errs.append(f"signature.value must be {ok_len}-hex or null for {sig['algorithm']}")
     for i, s in enumerate(receipt.get("stages", []) or []):
         if not isinstance(s, dict) or s.get("stage") not in _STAGES:
             errs.append(f"stages[{i}].stage invalid")

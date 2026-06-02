@@ -180,7 +180,10 @@
       ],
       "properties": {
         "algorithm": {
-          "const": "HMAC-SHA256"
+          "enum": [
+            "HMAC-SHA256",
+            "Ed25519"
+          ]
         },
         "key_id": {
           "type": [
@@ -193,6 +196,10 @@
             {
               "type": "string",
               "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{128}$"
             },
             {
               "type": "null"

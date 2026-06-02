@@ -23,9 +23,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         default="MIZAN_RECEIPT_SECRET",
         help="env var holding the HMAC secret (default: MIZAN_RECEIPT_SECRET)",
     )
+    pv.add_argument("--public-key", metavar="FILE",
+                    help="public key (hex, or a keygen JSON) to verify an Ed25519 receipt")
     pv.add_argument("--allow-unsigned", action="store_true", help="exit 0 on a valid but unsigned receipt")
     pv.add_argument("--allow-claim-mismatch", action="store_true",
                     help="exit 0 even when the agent's claim does not match execution")
+
+    pk = sub.add_parser("keygen", help="generate an Ed25519 keypair for signing receipts")
+    pk.add_argument("--key-id", default=None, help="optional key identifier to embed")
+    pk.add_argument("--out", metavar="FILE", help="write the keypair JSON here (else stdout)")
 
     pd = sub.add_parser("diff", help="compare two receipts")
     pd.add_argument("a", help="path to receipt A")
@@ -34,12 +40,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     args = parser.parse_args(argv)
 
-    from mizan.verify import cmd_diff, cmd_verify
+    from mizan.verify import cmd_diff, cmd_keygen, cmd_verify
 
     if args.command == "verify":
         return cmd_verify(args)
     if args.command == "diff":
         return cmd_diff(args)
+    if args.command == "keygen":
+        return cmd_keygen(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

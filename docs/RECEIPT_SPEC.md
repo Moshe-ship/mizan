@@ -80,10 +80,20 @@ JS verifier and a Python signer can never disagree:
    (`separators=(",", ":")`).
 5. `value = HEX( HMAC_SHA256(key, canonical_bytes) )`.
 
-Verification recomputes the same canonical form and compares in constant time.
-`algorithm` is fixed to `HMAC-SHA256` in v0; `key_id` names the secret used so
-a verifier can select the right key. (A future profile may add asymmetric /
-keyless signing; v0 is symmetric by design — shared-secret tamper-evidence.)
+Verification recomputes the same canonical form and checks the signature.
+`key_id` names the key so a verifier can select the right one. Two algorithms:
+
+| `signature.algorithm` | `value` | Verify with | Trust model |
+|---|---|---|---|
+| `HMAC-SHA256` (default, zero-dep) | 64 hex | the **secret** | symmetric — verifier can also sign |
+| `Ed25519` (`pip install "mizan[ed25519]"`) | 128 hex | the **public key** | asymmetric — verifier cannot sign |
+
+**Ed25519** is the cross-party model: the signer holds the private key; an
+auditor verifies with only the public key, so verification never hands out
+signing authority. Generate a keypair with `mizan keygen`; sign with
+`Receipt.to_v0(signer=Ed25519Signer(...))` or `attest(..., signer=...)`; verify
+with `mizan verify receipt.json --public-key key.json`. `mizan verify`
+auto-detects the algorithm from the receipt.
 
 Hash strings are lowercase hex prefixed by algorithm: `sha256:<64-hex>`.
 
@@ -153,6 +163,7 @@ major (0.2.0) may make v0 the default output.
 | `mizan diff` | ✅ |
 | Full JSON-Schema validation | ✅ when `jsonschema` is installed; structural check otherwise |
 | **Claim-vs-execution** (`attest`, `attest_claim`) | ✅ dependency-free; `mizan verify` checks it |
+| **Ed25519** asymmetric signing (`mizan keygen`, `--public-key`) | ✅ `pip install "mizan[ed25519]"`; HMAC stays the default |
 | Legacy `Receipt.to_dict()` / `Receipt.signature()` | ✅ unchanged (additive) |
 
 `mizan verify` exit codes: `0` ok · `1` invalid/schema · `2` tampered (signature) ·

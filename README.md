@@ -52,6 +52,12 @@ mizan verify receipt.json --secret-env MIZAN_RECEIPT_SECRET   # exit 0 / 2 (tamp
 mizan diff before.json after.json
 ```
 
+Signatures are **HMAC-SHA256** by default (zero-dep). For cross-party audit, use
+**Ed25519** (`pip install "mizan[ed25519]"`): the signer holds the private key,
+an auditor verifies with only the public key — `mizan keygen`, then
+`mizan verify receipt.json --public-key key.json` (auto-detected). See
+[`examples/ed25519_signing.py`](examples/ed25519_signing.py).
+
 The Receipt emits OTel-compatible spans **and** an HMAC signature — the
 tamper-evidence OpenTelemetry does not provide, satisfying OWASP MCP08's
 recommended OTel + cryptographic-hashing controls. Spec, JSON Schema, and

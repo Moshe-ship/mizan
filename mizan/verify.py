@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, Optional
 
 from mizan import receipt_v0
 
@@ -20,6 +20,46 @@ from mizan import receipt_v0
 def _load(path: str) -> Any:
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def _read_public_key(path: Optional[str]) -> Optional[str]:
+    """Read an Ed25519 public key: a keygen JSON ({"public_key": hex}) or raw hex."""
+    if not path:
+        return None
+    text = open(path, "r", encoding="utf-8").read().strip()
+    try:
+        obj = json.loads(text)
+        return obj.get("public_key") if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return text  # raw hex
+
+
+def cmd_keygen(args: Any) -> int:
+    from mizan.signing import Ed25519Signer
+
+    try:
+        signer = Ed25519Signer.generate(key_id=getattr(args, "key_id", None))
+    except ImportError as exc:
+        print(f"✗ {exc}")
+        return 1
+    keypair = {
+        "algorithm": "Ed25519",
+        "key_id": signer.key_id,
+        "public_key": signer.public_key_hex(),
+        "private_key": signer.private_key_hex(),
+    }
+    out = getattr(args, "out", None)
+    if out:
+        import os
+        with open(out, "w", encoding="utf-8") as fh:
+            json.dump(keypair, fh, indent=2)
+        os.chmod(out, 0o600)
+        print(f"wrote keypair to {out} (mode 600). Keep `private_key` secret; "
+              f"distribute only `public_key`.")
+    else:
+        print(json.dumps(keypair, indent=2))
+        print("# Keep private_key secret; share only public_key for `mizan verify --public-key`.")
+    return 0
 
 
 def cmd_verify(args: Any) -> int:
@@ -39,15 +79,20 @@ def cmd_verify(args: Any) -> int:
             print(f"    - {e}")
         return receipt_v0.status_exit_code(receipt_v0.INVALID)
 
+    algorithm = (receipt.get("signature") or {}).get("algorithm")
     secret = os.environ.get(args.secret_env)
+    public_key = _read_public_key(getattr(args, "public_key", None))
     value = (receipt.get("signature") or {}).get("value")
 
     if not value:
         status = receipt_v0.UNSIGNED
-    elif secret is None:
-        status = receipt_v0.NO_SECRET
     else:
-        status = receipt_v0.verify(receipt, secret)
+        # dispatch on the receipt's own algorithm
+        try:
+            status = receipt_v0.verify(receipt, secret, public_key=public_key)
+        except ImportError as exc:  # Ed25519 receipt on a bare install
+            print(f"✗ {receipt.get('receipt_id', '?')}: {exc}")
+            return 1
 
     rid = receipt.get("receipt_id", "?")
     decision = receipt.get("decision", {}).get("action", "?")
@@ -88,11 +133,13 @@ def cmd_verify(args: Any) -> int:
             return 0
         print(msg)
         return receipt_v0.status_exit_code(status)
-    # NO_SECRET
-    print(
-        f"⚠ {rid}: signed, but no secret to check it. "
-        f"Set ${args.secret_env} to verify the signature."
-    )
+    # NO_SECRET — no key for the receipt's algorithm
+    if algorithm == "Ed25519":
+        print(f"⚠ {rid}: Ed25519-signed, but no public key to check it. "
+              f"Pass --public-key <file> to verify.")
+    else:
+        print(f"⚠ {rid}: signed, but no secret to check it. "
+              f"Set ${args.secret_env} to verify the signature.")
     return receipt_v0.status_exit_code(receipt_v0.NO_SECRET)
 
 

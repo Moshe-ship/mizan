@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mizan"
-version = "0.1.16"
+version = "0.1.17"
 description = "The reliability scale for AI agents: restore, balance, classify, constrain, verify, weigh."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -48,6 +48,7 @@ preflight = [
     "qadiya>=0.1.0,<0.2.0",
 ]
 verify = ["toolproof-receipt>=0.5.2,<0.6.0"]
+ed25519 = ["cryptography>=41"]  # asymmetric receipt signing; HMAC stays the default
 openai = ["openai-agents>=0.1"]  # OpenAI Agents SDK — only for the adapter; core needs none
 all = [
     "jabr>=0.1.0,<0.2.0",
