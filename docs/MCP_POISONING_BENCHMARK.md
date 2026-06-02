@@ -5,7 +5,7 @@
 > here — a real head-to-head is a documented follow-up (see *Follow-up*). The point
 > of three separated splits is honesty: a single self-authored aggregate score is not.
 
-Reproduce: `pip install mizan && python benchmark/run.py`. Corpus: [`benchmark/corpus/`](../benchmark/corpus/).
+Reproduce from a clone (no install needed): `git clone https://github.com/Moshe-ship/mizan && cd mizan && python benchmark/run.py`. Corpus: [`benchmark/corpus/`](../benchmark/corpus/).
 
 ## 1. Consistency / regression (known patterns)
 

@@ -10,9 +10,14 @@ numbers into docs/MCP_POISONING_BENCHMARK.md. No single aggregate "score" is
 the headline — per-category honesty is the point. These are Mizan-only
 measurements; no competitor numbers are produced here (see the doc's follow-up).
 
-    pip install mizan
+The harness and corpus live in the repo (not the wheel), so reproduce from a clone:
+
+    git clone https://github.com/Moshe-ship/mizan && cd mizan
     python benchmark/run.py            # prints report + rewrites the doc
     python benchmark/run.py --check    # prints report, exits 1 on regression
+
+No install is required (the script adds the checkout to sys.path); a pip-installed
+`mizan` takes precedence if present.
 """
 
 from __future__ import annotations
@@ -22,7 +27,13 @@ import pathlib
 import sys
 from collections import defaultdict
 
-from mizan.mcpscan import scan_tool
+# Run straight from a clone with no install: make the repo's `mizan` importable.
+# (A pip-installed `mizan` still works; this only adds the checkout as a fallback.)
+_REPO = pathlib.Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.append(str(_REPO))
+
+from mizan.mcpscan import scan_tool  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent
 CORPUS = ROOT / "corpus"
@@ -108,7 +119,8 @@ def build_report() -> tuple[str, bool]:
     L.append("> over a committed corpus. **No competitor (e.g. `mcp-scan`) numbers are claimed**")
     L.append("> here — a real head-to-head is a documented follow-up (see *Follow-up*). The point")
     L.append("> of three separated splits is honesty: a single self-authored aggregate score is not.\n")
-    L.append("Reproduce: `pip install mizan && python benchmark/run.py`. "
+    L.append("Reproduce from a clone (no install needed): "
+             "`git clone https://github.com/Moshe-ship/mizan && cd mizan && python benchmark/run.py`. "
              "Corpus: [`benchmark/corpus/`](../benchmark/corpus/).\n")
 
     L.append("## 1. Consistency / regression (known patterns)\n")

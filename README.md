@@ -120,9 +120,9 @@ scanner does not need them.
 How well does it work? See the reproducible, three-split benchmark (consistency /
 held-out adversarial / clean false-positive): [**docs/MCP_POISONING_BENCHMARK.md**](docs/MCP_POISONING_BENCHMARK.md).
 Measured **per category** (catch / miss / false-positive) with **0 hard false
-positives** and the held-out misses listed honestly — regenerate it with
-`python benchmark/run.py`. No competitor numbers are claimed; a real `mcp-scan`
-head-to-head is a documented follow-up.
+positives** — reproduce from a clone (no install needed):
+`git clone https://github.com/Moshe-ship/mizan && cd mizan && python benchmark/run.py`.
+No competitor numbers are claimed; a real `mcp-scan` head-to-head is a documented follow-up.
 
 ## Use
 
