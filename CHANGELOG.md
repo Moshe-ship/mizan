@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.15] — 2026-06-02
+
+### Changed
+- **Benchmark reproduce command fixed**: the harness + corpus are repo-only, so
+  `benchmark/run.py` now adds the checkout to `sys.path` and runs from a clone
+  with no install or `PYTHONPATH` (a pip-installed `mizan` still wins). Command
+  corrected in the docstring, generated doc, and README.
+- **Path A (real `mcp-scan` comparison) — documented, not faked.** Verified the
+  tool's current state: `mcp-scan` (Invariant) is now Snyk's `snyk-agent-scan`,
+  which requires a Snyk account + `SNYK_TOKEN` + cloud (no offline mode) and
+  scans configs/live MCP servers, not raw descriptors. A clean key-free
+  head-to-head on this corpus isn't runnable here, so **no competitor numbers
+  are claimed**; the benchmark doc records exactly how to run it with a token.
+
 ## [0.1.14] — 2026-06-02
 
 ### Changed — scanner hardening (measured before/after)

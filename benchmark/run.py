@@ -148,11 +148,20 @@ def build_report() -> tuple[str, bool]:
     L.append("and the Arabic side of **semantic** exfiltration — categories the held-out split shows")
     L.append("are where Arabic morphology/dialect/transliteration depth matters.\n")
 
-    L.append("## Follow-up — real `mcp-scan` comparison (not yet run)\n")
-    L.append("A live head-to-head against Invariant's `mcp-scan` is **not** included. When run it will:")
-    L.append("pin the `mcp-scan` version, document the install command and the descriptor/input")
-    L.append("conversion, run the **same** corpus, and publish the exact command + output — updating")
-    L.append("this doc only with measured numbers, per category.")
+    L.append("## Follow-up — real `mcp-scan` comparison (not runnable here; no numbers claimed)\n")
+    L.append("We checked the actual tool before claiming anything. As of June 2026, **`mcp-scan`")
+    L.append("(Invariant Labs) has been acquired by Snyk and renamed `snyk-agent-scan`** — the")
+    L.append("`mcp-scan` PyPI package is now a redirect. Per its own docs, `snyk-agent-scan`:\n")
+    L.append("- **requires a Snyk account + `SNYK_TOKEN` and cloud connectivity** — *\"Analysis and")
+    L.append("  Validation … by invoking the Agent Scan API\"*; there is **no offline/local-only mode**;")
+    L.append("- scans **config files / live MCP servers** (e.g. `~/.vscode/mcp.json`), connecting to")
+    L.append("  servers to retrieve tool descriptions — it does **not** accept raw descriptor strings,")
+    L.append("  which is the shape of this corpus.\n")
+    L.append("So a clean, **key-free, offline** head-to-head on this corpus is not something we can run")
+    L.append("here, and we will **not** publish numbers we did not measure. To run it yourself with a")
+    L.append("Snyk account: convert each corpus tool into a tiny MCP server, point a config at it, and")
+    L.append("`SNYK_TOKEN=… uvx snyk-agent-scan@latest <config> --dangerously-run-mcp-servers`, then")
+    L.append("score its findings against the same labels. Until measured, **no competitor numbers are claimed.**")
 
     return "\n".join(L) + "\n", regression_ok
 

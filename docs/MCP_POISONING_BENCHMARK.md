@@ -52,9 +52,20 @@ Unicode detection. Mizan's measured differentiation is the multilingual/Arabic l
 and the Arabic side of **semantic** exfiltration — categories the held-out split shows
 are where Arabic morphology/dialect/transliteration depth matters.
 
-## Follow-up — real `mcp-scan` comparison (not yet run)
+## Follow-up — real `mcp-scan` comparison (not runnable here; no numbers claimed)
 
-A live head-to-head against Invariant's `mcp-scan` is **not** included. When run it will:
-pin the `mcp-scan` version, document the install command and the descriptor/input
-conversion, run the **same** corpus, and publish the exact command + output — updating
-this doc only with measured numbers, per category.
+We checked the actual tool before claiming anything. As of June 2026, **`mcp-scan`
+(Invariant Labs) has been acquired by Snyk and renamed `snyk-agent-scan`** — the
+`mcp-scan` PyPI package is now a redirect. Per its own docs, `snyk-agent-scan`:
+
+- **requires a Snyk account + `SNYK_TOKEN` and cloud connectivity** — *"Analysis and
+  Validation … by invoking the Agent Scan API"*; there is **no offline/local-only mode**;
+- scans **config files / live MCP servers** (e.g. `~/.vscode/mcp.json`), connecting to
+  servers to retrieve tool descriptions — it does **not** accept raw descriptor strings,
+  which is the shape of this corpus.
+
+So a clean, **key-free, offline** head-to-head on this corpus is not something we can run
+here, and we will **not** publish numbers we did not measure. To run it yourself with a
+Snyk account: convert each corpus tool into a tiny MCP server, point a config at it, and
+`SNYK_TOKEN=… uvx snyk-agent-scan@latest <config> --dangerously-run-mcp-servers`, then
+score its findings against the same labels. Until measured, **no competitor numbers are claimed.**

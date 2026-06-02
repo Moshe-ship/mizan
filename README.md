@@ -333,7 +333,7 @@ an external host (`R-EXFIL-003`). The benchmark moved **held-out 14/16 → 16/16
 0 new false positives** (same 0 hard / 5 soft).
 
 Next:
-1. **Real `mcp-scan` head-to-head** (the documented follow-up): pin its version, document the install + descriptor conversion, run the same corpus, publish the exact command + output. Until then no competitor numbers are claimed.
+1. **Real `mcp-scan` head-to-head** — blocked on the tool, not on us: `mcp-scan` (Invariant) is now Snyk's `snyk-agent-scan`, which **requires a Snyk account + `SNYK_TOKEN` + cloud** (no offline mode) and scans configs/live servers, not raw descriptors. A clean key-free comparison on this corpus isn't runnable here; the [benchmark doc](docs/MCP_POISONING_BENCHMARK.md) documents how to run it with a token. **No competitor numbers are claimed until measured.**
 2. Grow the corpus with fresh adversarial variants (v3 held-out) so the next generalization number is earned on unseen attacks.
 
 ## One-Line Pitch
