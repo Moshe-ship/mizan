@@ -33,6 +33,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pk.add_argument("--key-id", default=None, help="optional key identifier to embed")
     pk.add_argument("--out", metavar="FILE", help="write the keypair JSON here (else stdout)")
 
+    pl = sub.add_parser("verify-log", help="verify a hash-chained, append-only receipt log")
+    pl.add_argument("log", help="path to a JSONL receipt log (see mizan.chain.ReceiptLog)")
+    pl.add_argument("--secret-env", default="MIZAN_RECEIPT_SECRET",
+                    help="also verify each receipt's HMAC signature using this env var")
+    pl.add_argument("--public-key", metavar="FILE",
+                    help="also verify each receipt's Ed25519 signature with this public key")
+
     pd = sub.add_parser("diff", help="compare two receipts")
     pd.add_argument("a", help="path to receipt A")
     pd.add_argument("b", help="path to receipt B")
@@ -40,7 +47,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
     args = parser.parse_args(argv)
 
-    from mizan.verify import cmd_diff, cmd_keygen, cmd_verify
+    from mizan.verify import cmd_diff, cmd_keygen, cmd_verify, cmd_verify_log
 
     if args.command == "verify":
         return cmd_verify(args)
@@ -48,6 +55,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return cmd_diff(args)
     if args.command == "keygen":
         return cmd_keygen(args)
+    if args.command == "verify-log":
+        return cmd_verify_log(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 

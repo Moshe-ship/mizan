@@ -184,3 +184,44 @@ def cmd_diff(args: Any) -> int:
     for line in diffs[:40]:
         print(line)
     return 1
+
+
+def cmd_verify_log(args: Any) -> int:
+    """Verify a hash-chained receipt log: sequence integrity, and optionally
+    each receipt's signature. Exit: 0 ok · 1 chain broken · 2 a signature failed."""
+    from mizan import chain
+
+    ok, problems = chain.verify_log(args.log)
+    try:
+        with open(args.log, "r", encoding="utf-8") as fh:
+            links = [json.loads(l) for l in fh if l.strip()]
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"✗ cannot read log: {exc}")
+        return 1
+
+    if not ok:
+        print(f"✗ chain BROKEN ({len(problems)} problem(s)):")
+        for p in problems[:20]:
+            print(f"    - {p}")
+        return 1
+    print(f"✓ chain intact: {len(links)} link(s), unbroken from genesis")
+
+    secret = os.environ.get(args.secret_env)
+    public_key = _read_public_key(getattr(args, "public_key", None))
+    if secret is None and public_key is None:
+        return 0  # chain-only check requested
+
+    bad = []
+    for rec in links:
+        try:
+            status = receipt_v0.verify(rec.get("receipt", {}), secret, public_key=public_key)
+        except ImportError as exc:
+            print(f"✗ {exc}")
+            return 1
+        if status != receipt_v0.OK:
+            bad.append((rec.get("seq"), status))
+    if bad:
+        print(f"✗ {len(bad)} receipt signature(s) not OK: {bad[:10]}")
+        return 2
+    print(f"✓ all {len(links)} receipt signatures valid")
+    return 0

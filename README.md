@@ -58,6 +58,11 @@ an auditor verifies with only the public key — `mizan keygen`, then
 `mizan verify receipt.json --public-key key.json` (auto-detected). See
 [`examples/ed25519_signing.py`](examples/ed25519_signing.py).
 
+For a deployable **audit trail**, append receipts to a hash-chained, append-only
+log (`mizan.chain.ReceiptLog`): signatures prove each receipt is intact, the
+chain proves the *sequence* wasn't reordered or truncated. `mizan verify-log
+audit.jsonl` checks both. Storage + SIEM guidance: [docs/AUDIT_STORAGE.md](docs/AUDIT_STORAGE.md).
+
 The Receipt emits OTel-compatible spans **and** an HMAC signature — the
 tamper-evidence OpenTelemetry does not provide, satisfying OWASP MCP08's
 recommended OTel + cryptographic-hashing controls. Spec, JSON Schema, and

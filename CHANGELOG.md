@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.18] — 2026-06-02
+
+### Added — append-only audit trails (production gate #3)
+- `mizan.chain.ReceiptLog`: an append-only, **hash-chained** JSONL receipt log.
+  A signature proves each receipt is intact; the chain proves the *sequence*
+  wasn't reordered, truncated, or inserted into (each link commits to the prior
+  link's digest). Dependency-free.
+- `mizan verify-log <file>`: verify chain integrity, and optionally every
+  receipt's signature (`--secret-env` / `--public-key`). Exit: 0 ok · 1 chain
+  broken · 2 a signature failed.
+- `docs/AUDIT_STORAGE.md`: three-layer guidance (signature → hash chain →
+  write-once storage + external head anchoring) and SIEM/OTel deployment.
+- `examples/audit_log.py`; tests for tamper / removal / reorder detection.
+
 ## [0.1.17] — 2026-06-02
 
 ### Added — Ed25519 asymmetric signing (additive; HMAC stays the default)
