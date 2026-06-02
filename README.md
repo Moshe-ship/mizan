@@ -247,13 +247,13 @@ flowchart LR
 
 | Stage | Repo | Verb | Current state | Next improvement |
 |---|---|---|---|---|
-| Tool-surface inspection | `mizan.mcpscan` (this repo) | scan | Multilingual MCP poisoning scanner: 6 rule families, audit/warn/block modes, 43 tests, 25/25 corpus recall @ 0 high-FP | OTel export; held-out adversarial corpus; real mcp-scan comparison |
-| Pre-LLM input integrity | [jabr](https://github.com/Moshe-ship/jabr) | restore | Reversible prompt-context restoration, 31 tests | Publish as part of one preflight package |
-| Pre-LLM input integrity | [muqabalah](https://github.com/Moshe-ship/muqabalah) | balance | Reversible cancellation and fail-loud contradiction handling, 19 tests | Share a common receipt format with the rest of the stack |
+| Tool-surface inspection | `mizan.mcpscan` (this repo) | scan | Multilingual MCP poisoning scanner: 7 rule families, audit/warn/block modes; [reproducible benchmark](docs/MCP_POISONING_BENCHMARK.md) — consistency 25/25, held-out 16/16, **0 hard false positives** | OTel export; grow the held-out corpus; token-gated `snyk-agent-scan` comparison |
+| Pre-LLM input integrity | [jabr](https://github.com/Moshe-ship/jabr) | restore | Reversible prompt-context restoration, 37 tests | Publish as part of one preflight package |
+| Pre-LLM input integrity | [muqabalah](https://github.com/Moshe-ship/muqabalah) | balance | Reversible cancellation and fail-loud contradiction handling, 23 tests | Share a common receipt format with the rest of the stack |
 | Pre-LLM input integrity | [qadiya](https://github.com/Moshe-ship/qadiya) | classify + dispatch | Constraint-driven case registry, 15 tests | Done — exposed as `mizan.ToolGate` and wired into the Hermes plugin |
 | Proof it works | [case-eval](https://github.com/Moshe-ship/case-eval) | measure | 272 ambiguous prompts, deterministic and LLM-in-the-loop modes, 28 tests | Keep results reproducible and publish the key tables from fresh runs |
 | During tool selection | [mtg](https://github.com/Moshe-ship/mtg) | constrain | Morphological Type Guards for multilingual tool arguments, v0.1 advisory mode. Emits a `mizan` receipt via `mizan.constrain` | Move from advisory diagnostics toward enforceable policy modes |
-| Post execution | [toolproof](https://github.com/Moshe-ship/toolproof) | verify | Pre-execution gating, signed receipts, 95 tests, v0.5.0. Emits a `mizan` receipt via `mizan.record_from_toolproof` | Publish the adversarial dataset and methodology behind headline claims |
+| Post execution | [toolproof](https://github.com/Moshe-ship/toolproof) | verify | Pre-execution gating, signed receipts, 98 tests, v0.5.2 (`toolproof-receipt` on PyPI). Emits a `mizan` receipt via `mizan.record_from_toolproof` | Publish the adversarial dataset and methodology behind headline claims |
 | Benchmark | [arabic-agent-eval](https://github.com/Moshe-ship/arabic-agent-eval) | score | 51 Arabic function-calling items, 6 categories, 5 dialect variants, 22 functions | Reframe as open/installable/dialect-split, publish HF dataset and leaderboard |
 | Tool layer | [wasl](https://github.com/Moshe-ship/wasl) | connect | Arabic MCP server, 30 tools | Register and demo as the Arabic tool substrate for agents |
 | Agent runtime | [hurmoz](https://github.com/Moshe-ship/hurmoz) | operate | 63 Arabic Hermes skills | Keep as the Arabic skills layer and link the reliability stack from relevant skills |

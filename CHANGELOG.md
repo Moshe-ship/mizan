@@ -4,6 +4,15 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.16] — 2026-06-02
+
+### Changed
+- README stack table: corrected stale numbers (mizan.mcpscan now lists 7 rule
+  families and references the reproducible benchmark — consistency 25/25,
+  held-out 16/16, 0 hard FP; jabr 37 tests, muqabalah 23, toolproof 98/v0.5.2).
+- verify-published gate hardened against propagation timing (polls for both
+  wheel+sdist, retries provenance) — landed on main, first exercised by this release.
+
 ## [0.1.15] — 2026-06-02
 
 ### Changed
