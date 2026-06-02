@@ -54,23 +54,29 @@ def cmd_verify(args: Any) -> int:
     verif = receipt.get("verification", "?")
 
     if status == receipt_v0.OK:
-        # Signature holds. Now: does the agent's claim match observed execution?
+        # Signature holds. Now weigh the agent's claim against observed execution.
+        # The RECOMPUTED comparison is authoritative — never the receipt's own
+        # `verification` field, which a signer could under- or over-state.
         execution, claim = receipt.get("execution"), receipt.get("claim")
         if execution and claim:
             recomputed = receipt_v0.attest_claim(execution, claim)
             if verif == "verified" and recomputed != "verified":
-                # signed receipt asserts "verified" but the hashes disagree
-                print(f"✗ {rid}: DISHONEST — verification says 'verified' but the claim "
-                      f"does not match execution ({recomputed})")
+                # the receipt over-claims a positive verdict
+                print(f"✗ {rid}: DISHONEST — receipt declares verification 'verified' but the "
+                      f"claim does not match execution (recomputed: {recomputed})")
                 return receipt_v0.status_exit_code(receipt_v0.INVALID)
-        if verif == "tampered":
-            print(f"✗ {rid}: signature VALID, but the agent's CLAIM does NOT match execution "
-                  f"— the agent lied about the result (claim mismatch)")
-            if getattr(args, "allow_claim_mismatch", False):
-                print("  accepted (--allow-claim-mismatch)")
-                return 0
-            return receipt_v0.status_exit_code(receipt_v0.CLAIM_MISMATCH)
-        print(f"✓ {rid}: signature VALID · decision={decision} · claim={verif}")
+            if recomputed == "tampered":
+                # the claim genuinely does not match execution — regardless of
+                # what the receipt's own verification field says.
+                print(f"✗ {rid}: signature VALID, but the agent's CLAIM does NOT match execution "
+                      f"— the agent lied about the result (claim mismatch)")
+                if getattr(args, "allow_claim_mismatch", False):
+                    print("  accepted (--allow-claim-mismatch)")
+                    return 0
+                return receipt_v0.status_exit_code(receipt_v0.CLAIM_MISMATCH)
+            print(f"✓ {rid}: signature VALID · decision={decision} · claim={recomputed}")
+            return 0
+        print(f"✓ {rid}: signature VALID · decision={decision} · verification={verif}")
         return 0
     if status == receipt_v0.TAMPERED:
         print(f"✗ {rid}: signature MISMATCH — receipt was modified after signing (TAMPERED)")

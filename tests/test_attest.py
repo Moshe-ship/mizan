@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import types
 
+import pytest
+
 from mizan import receipt_v0
 from mizan.receipt import Receipt, StageRecord
 from mizan.verify import cmd_verify
@@ -78,6 +80,38 @@ def test_cli_exit_codes_for_claim(tmp_path):
     assert _verify(honest, tmp=str(tmp_path)) == 0
     assert _verify(liar, tmp=str(tmp_path)) == 5            # claim mismatch
     assert _verify(liar, allow_mismatch=True, tmp=str(tmp_path)) == 0
+
+
+def _doc_with(verification, *, match, tmp):
+    """A signed receipt whose execution and claim (mis)match, with an explicit
+    (possibly inconsistent) verification field."""
+    real = receipt_v0.hash_value({"r": "REAL"})
+    claim_hash = real if match else receipt_v0.hash_value({"r": "LIE"})
+    return Receipt("x", "y").to_v0(
+        secret=SECRET,
+        execution={"tool": "t", "args_hash": receipt_v0.hash_value("a"),
+                   "result_hash": real, "observed_status": "ok"},
+        claim={"tool": "t", "result_hash": claim_hash},
+        verification=verification,
+    )
+
+
+@pytest.mark.parametrize("declared", ["unverified", "not_applicable", "tampered"])
+def test_mismatch_is_exit_5_regardless_of_declared_field(declared, tmp_path):
+    # A receipt cannot hide a lie behind a self-declared 'unverified'/'not_applicable'.
+    doc = _doc_with(declared, match=False, tmp=str(tmp_path))
+    assert _verify(doc, tmp=str(tmp_path)) == 5
+
+
+def test_mismatch_declared_verified_is_exit_1(tmp_path):
+    doc = _doc_with("verified", match=False, tmp=str(tmp_path))
+    assert _verify(doc, tmp=str(tmp_path)) == 1  # forged positive verdict
+
+
+@pytest.mark.parametrize("declared", ["unverified", "verified"])
+def test_match_is_exit_0_even_if_field_understates(declared, tmp_path):
+    doc = _doc_with(declared, match=True, tmp=str(tmp_path))
+    assert _verify(doc, tmp=str(tmp_path)) == 0  # recomputed match is authoritative
 
 
 def test_cli_detects_dishonest_forged_verified(tmp_path):

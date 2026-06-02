@@ -4,6 +4,16 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.13] — 2026-06-01
+
+### Fixed
+- **`mizan verify` claim-vs-execution enforcement was incomplete.** It gated the
+  exit-5 path on the receipt's *self-declared* `verification` field, so a
+  mismatching claim labelled `unverified`/`not_applicable` passed (exit 0). The
+  recomputed `attest_claim(execution, claim)` is now **authoritative**: any claim
+  that does not match execution exits `5` regardless of the declared field; a
+  forged `verified` exits `1`; a genuine match exits `0` even if under-stated.
+
 ## [0.1.12] — 2026-06-01
 
 ### Added — claim-vs-execution ("signed action truth")

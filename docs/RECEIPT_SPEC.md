@@ -172,9 +172,16 @@ major (0.2.0) may make v0 the default output.
 signed *execution* receipt and returns a re-signed receipt with the claim filled
 and `verification` computed — turning execution evidence into **action truth**.
 
-`mizan verify` enforces it: a signed receipt whose `verification` is `verified`
-**must** actually have matching hashes, or verify exits `1` (a signer cannot
-forge "verified"). A `tampered` claim (the agent lied) exits `5` unless
-`--allow-claim-mismatch`. This is the layer the OpenAI adapter alone does not
-provide — the adapter records execution; `attest` + `mizan verify` weigh the
-claim against it.
+`mizan verify` **recomputes** `attest_claim(execution, claim)` and treats the
+result as **authoritative** — never the receipt's own `verification` field,
+which a signer could under- or over-state. So:
+
+- the recomputed claim does not match execution → exit `5` (the agent lied),
+  **regardless** of what the receipt's `verification` field says;
+- the receipt declares `verification: verified` while the hashes disagree →
+  exit `1` (a signer cannot forge a positive verdict);
+- a genuine match → exit `0`, even if the receipt under-stated the field;
+- `--allow-claim-mismatch` overrides only the exit-`5` case.
+
+This is the layer the OpenAI adapter alone does not provide — the adapter
+records execution; `attest` + `mizan verify` weigh the claim against it.
