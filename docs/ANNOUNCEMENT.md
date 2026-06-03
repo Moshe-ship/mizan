@@ -141,4 +141,5 @@ python examples/full_pipeline_demo.py     # the example + corpus live in the rep
 
 If the idea resonates — *agents should not act until their inputs, tool choices,
 arguments, and claimed executions can be weighed* — the most useful thing you can
-do is clone the repo, run the benchmark, and tell us where it's wrong.
+do is **check us**: [REPRODUCE.md](REPRODUCE.md) reproduces every claim (benchmark,
+tests, provenance, verifiable receipts) in a few commands. Tell us where it's wrong.
