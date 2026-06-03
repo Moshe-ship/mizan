@@ -16,6 +16,9 @@ import sys
 import urllib.error
 import urllib.request
 
+# Every package publishes via the same Trusted Publishing workflow filename.
+EXPECTED_WORKFLOW = "release.yml"
+
 # package -> (version, expected GitHub "owner/repo")
 STACK = {
     "mizan": ("0.1.19", "Moshe-ship/mizan"),
@@ -66,14 +69,17 @@ def main() -> int:
             try:
                 pub = prov["attestation_bundles"][0]["publisher"]
                 if pub.get("repository") != repo:
-                    problems.append(f"{f}: publisher {pub.get('repository')} != {repo}")
+                    problems.append(f"{f}: publisher repo {pub.get('repository')} != {repo}")
+                if pub.get("workflow") != EXPECTED_WORKFLOW:
+                    problems.append(f"{f}: workflow {pub.get('workflow')} != {EXPECTED_WORKFLOW}")
             except (KeyError, IndexError, TypeError):
                 problems.append(f"{f}: malformed provenance")
         if problems:
             ok = False
             print(f"✗ {name} {version}: " + "; ".join(problems))
         else:
-            print(f"✓ {name} {version}: wheel + sdist provenance OK (publisher {repo})")
+            print(f"✓ {name} {version}: wheel + sdist provenance OK "
+                  f"(publisher {repo} · {EXPECTED_WORKFLOW})")
     print("\n" + ("ALL PROVENANCE VERIFIED" if ok else "PROVENANCE CHECK FAILED"))
     return 0 if ok else 1
 
