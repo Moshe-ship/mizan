@@ -17,9 +17,9 @@ Logs don't prove it (they can be edited). Observability spans don't prove it
 verifiable trail. **Mizan** is the missing layer: a signed *evidence* object for
 agent actions.
 
-`pip install mizan` — it's [on PyPI](https://pypi.org/project/mizan/), Apache/MIT,
-and the whole stack is published with token-free [Trusted Publishing + digital
-attestations](SUPPLY_CHAIN.md).
+`pip install mizan` — it's [on PyPI](https://pypi.org/project/mizan/), MIT-licensed
+(the `mtg-guards` primitive is Apache-2.0), and the whole stack is published with
+token-free [Trusted Publishing + digital attestations](SUPPLY_CHAIN.md).
 
 ## The thesis
 
@@ -41,8 +41,9 @@ The **Receipt is the product**. Everything else feeds it.
 ## The whole thing in one command
 
 ```bash
+git clone https://github.com/Moshe-ship/mizan && cd mizan
 pip install "mizan[all]"
-python examples/full_pipeline_demo.py
+python examples/full_pipeline_demo.py     # the example + corpus live in the repo
 ```
 
 A poisoned MCP tool, an Arabic request, a transliterated argument, and a lying
@@ -96,7 +97,7 @@ Two honest framings I won't blur:
 - Generic English/Unicode scanners and the OWASP cheat sheet already cover BiDi
   and homoglyphs. **Mizan did not invent Unicode detection.** Its measured edge
   is the **Arabic layer** — Arabizi, code-switch, and the Arabic side of semantic
-  exfiltration — categories the held-out set shows generic tools miss.
+  exfiltration — categories where Mizan's Arabic-specific rules are designed to go deeper.
 - It's **audit/warn-ready, not default-block**. No competitor numbers are claimed:
   the closest tool (Invariant's `mcp-scan`, now Snyk's `snyk-agent-scan`) needs a
   Snyk account + cloud and scans live servers, not raw descriptors, so a clean
@@ -104,8 +105,8 @@ Two honest framings I won't blur:
 
 This connects to **OWASP MCP Top 10 (2025)**: MCP03 (Tool Poisoning) maps to the
 scanner; **MCP08 (Lack of Audit & Telemetry)** recommends exactly *OpenTelemetry
-+ cryptographic hashing + append-only storage* — which is what the signed,
-chained, OTel-aligned Receipt implements.
++ cryptographic hashing + append-only storage* — which the signed, chained,
+OTel-aligned Receipt is designed to support.
 
 ## How it's built (the boring trust work)
 
@@ -129,8 +130,9 @@ chained, OTel-aligned Receipt implements.
 ## Try it
 
 ```bash
+git clone https://github.com/Moshe-ship/mizan && cd mizan
 pip install "mizan[all]"
-python examples/full_pipeline_demo.py
+python examples/full_pipeline_demo.py     # the example + corpus live in the repo
 ```
 
 - PyPI: <https://pypi.org/project/mizan/>
