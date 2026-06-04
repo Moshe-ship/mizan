@@ -6,22 +6,45 @@
 [![License: MIT](https://img.shields.io/pypi/l/mizan)](LICENSE)
 [![Trusted Publishing](https://img.shields.io/badge/PyPI-Trusted%20Publishing-blue)](docs/SUPPLY_CHAIN.md)
 
-**The reliability scale for AI agents.**
+**Your agent said it acted. Mizan proves whether it did.**
 
 > **Status: public alpha (pre-1.0).** The stack is installable, attested,
 > token-free, and tested end to end. It is *not* a claim of complete security —
 > repository hardening (branch/tag protection, required reviews) is in progress.
 > See [docs/SUPPLY_CHAIN.md](docs/SUPPLY_CHAIN.md).
 
-Restore the prompt, balance contradictions, classify the case, constrain the arguments, verify the execution, then weigh the evidence.
+Put Mizan in front of your agent's tools. It does four jobs, and every action
+leaves a signed, verifiable receipt:
 
-Mizan is built Arabic-first because Arabic exposes failures English often hides: morphology, dialect drift, transliteration, right-to-left text, BiDi safety, and token cost. Those are the same blind spots that hide **tool-poisoning attacks generic English scanners miss** — which is why Mizan ships a multilingual MCP scanner (`mizan.mcpscan`) alongside the reliability pipeline.
+- **Scan** — inspect tool surfaces for poisoning (multilingual: BiDi, invisible, homoglyph, Arabizi, code-switch, transliteration).
+- **Gate** — block risky tool calls against policy *before* they run.
+- **Prove** — record what actually executed, and whether the agent's claim matches it.
+- **Audit** — chain every action into a signed, tamper-evident Receipt v0 you can replay.
 
-This repository is the spine for the Mizan stack. It does not replace the existing repos. It makes them read as one system.
+## Put Mizan in front of your agent's tools
 
-## Thesis
+The **gateway** is the fastest way in — a Mizan-guarded MCP proxy. No changes to
+your agent or your tools:
 
-Agents need a scale before autonomy. Every prompt transformation should be restorable, every contradiction should be balanced or escalated, every tool argument should be constrained, and every execution should leave a receipt that can be weighed against what the agent claims.
+```bash
+pip install "mizan[all]"
+mizan gateway --config mcp.json --receipt-log receipts.jsonl   # scan · gate · sign · log
+mizan report receipts.jsonl                                    # the signed evidence, as a dashboard
+```
+
+It launches your MCP server, scans every tool descriptor, gates every call
+against your allowlist (**blocked calls never reach your server**), and signs a
+Receipt v0 for each — see [`examples/mcp-gateway/`](examples/mcp-gateway/).
+Already using a framework? Drop-in adapters for **OpenAI Agents SDK, LangGraph,
+and CrewAI** ([docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)) emit the same receipts.
+
+Mizan is built **Arabic-first** because Arabic exposes failures English often
+hides — morphology, transliteration, right-to-left text, BiDi, code-switching —
+the same blind spots that hide **tool-poisoning attacks generic English scanners
+miss**. `mizan scan --arabic` separates Arabic-specific risk from generic Unicode
+risk. Under the hood, the four jobs are six reversible operations
+(restore → balance → classify → constrain → verify → weigh); see
+[Why It Is Called Mizan](#why-it-is-called-mizan).
 
 ## The Receipt — signed evidence for agent actions
 
