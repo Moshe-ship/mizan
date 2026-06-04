@@ -48,7 +48,7 @@ python scripts/verify_provenance.py
 Expected: `ALL PROVENANCE VERIFIED`. Or check one by hand:
 
 ```bash
-curl -s https://pypi.org/integrity/mizan/0.1.24/mizan-0.1.24-py3-none-any.whl/provenance \
+curl -s https://pypi.org/integrity/mizan/0.1.25/mizan-0.1.25-py3-none-any.whl/provenance \
   | python -c "import sys,json; b=json.load(sys.stdin)['attestation_bundles'][0]['publisher']; print(b['kind'], b['repository'], b['workflow'])"
 # -> GitHub Moshe-ship/mizan release.yml
 ```

@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.25] — 2026-06-04
+
+### Added
+- **CrewAI integration**, verified against the real runtime. `mizan.adapters.crewai`
+  (import-safe; `pip install "mizan[crewai]"`) offers two paths, both emitting a
+  signed Receipt v0 per `.run()`: compose `receipt_tool` under CrewAI's `@tool`,
+  or `wrap_tool` / `wrap_tools` to guard an existing tool list before an
+  Agent/Crew. Re-exports `chain_sink`, so receipts join the same
+  `mizan verify-log`-able chain as the other surfaces.
+- **Real CrewAI smoke test** (`tests/test_adapter_crewai.py`): compose, wrap, and
+  error paths on crewai 1.14.x — nothing mocked. CrewAI's native deps build on
+  Python 3.11/3.12, so CI runs it in a dedicated 3.11 job; the test skips cleanly
+  where CrewAI isn't installed.
+
 ## [0.1.24] — 2026-06-04
 
 ### Added
