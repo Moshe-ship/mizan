@@ -58,6 +58,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pd.add_argument("b", help="path to receipt B")
     pd.add_argument("--include-volatile", action="store_true", help="also compare receipt_id/created_at/signature")
 
+    ps = sub.add_parser("scan", help="scan MCP tool descriptors for poisoning (with an Arabic mode)")
+    ps.add_argument("path", help="JSON file: a tool, a list of tools, or {\"tools\": [...]}")
+    ps.add_argument("--arabic", action="store_true",
+                    help="separate Arabic-specific risk from generic Unicode risk; add the transliteration check")
+    ps.add_argument("--mode", choices=["audit", "warn", "block"], default="audit",
+                    help="audit (exit 0) · warn (exit 1) · block (exit 2 on high severity)")
+    ps.add_argument("--receipt-log", metavar="FILE",
+                    help="append a signed Receipt v0 per scanned tool to this hash-chained log")
+    ps.add_argument("--secret-env", default="MIZAN_RECEIPT_SECRET",
+                    help="env var holding the HMAC secret for receipt signing")
+
     pgw = sub.add_parser("gateway", help="run a Mizan-guarded MCP stdio proxy (scan, gate, sign, log)")
     pgw.add_argument("--config", required=True, metavar="FILE",
                      help="mcp.json: downstream server, allow policy, signing secret")
@@ -81,6 +92,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "report":
         from mizan.report import cmd_report
         return cmd_report(args)
+    if args.command == "scan":
+        from mizan.scan import cmd_scan
+        return cmd_scan(args)
     if args.command == "gateway":
         from mizan.gateway import cmd_gateway
         return cmd_gateway(args)
