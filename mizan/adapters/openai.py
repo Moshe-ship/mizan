@@ -76,10 +76,26 @@ def _current_trace_id() -> Optional[str]:
 
 
 def jsonl_sink(path: str) -> Sink:
-    """A sink that appends each receipt to a JSONL file."""
+    """A sink that appends each receipt to a JSONL file (one receipt per line).
+
+    Each line is `mizan verify`-able. For a tamper-evident, `mizan verify-log`-able
+    sequence, use :func:`chain_sink` instead.
+    """
     def _sink(doc: dict) -> None:
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(doc, ensure_ascii=False) + "\n")
+    return _sink
+
+
+def chain_sink(path: str) -> Sink:
+    """A sink that appends each receipt to a hash-chained ``ReceiptLog`` — the
+    same append-only log the gateway and scanner write, so adapter receipts are
+    `mizan verify-log` / `mizan report`-able as one tamper-evident chain."""
+    from mizan.chain import ReceiptLog
+    log = ReceiptLog(path)
+
+    def _sink(doc: dict) -> None:
+        log.append(doc)
     return _sink
 
 
