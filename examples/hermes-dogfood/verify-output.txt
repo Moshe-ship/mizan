@@ -1,0 +1,7 @@
+$ mizan verify-log receipts.jsonl
+✓ chain intact: 8 link(s), unbroken from genesis
+  head digest (anchor this to detect tail truncation): 536dbecfec5f5c507f7616ad6af5aaff7a8448795457d7af8a0db99d2dd39e74
+✓ all 8 receipt signatures valid
+
+$ mizan verify <newest receipt> --secret-env MIZAN_RECEIPT_SECRET
+✓ rcpt_40e510c4e9e5: signature VALID · decision=blocked · verification=not_applicable

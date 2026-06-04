@@ -44,6 +44,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pl.add_argument("--expect-count", type=int, metavar="N",
                     help="anchored link count — detects tail truncation/extension")
 
+    pr = sub.add_parser("report", help="render a self-contained HTML report of a signed receipt log")
+    pr.add_argument("log", help="path to a JSONL receipt log (see mizan.chain.ReceiptLog)")
+    pr.add_argument("--secret-env", default="MIZAN_RECEIPT_SECRET",
+                    help="env var holding the HMAC secret to check signatures")
+    pr.add_argument("--public-key", metavar="FILE",
+                    help="public key (hex or keygen JSON) to verify Ed25519 receipts")
+    pr.add_argument("--out", metavar="FILE", help="write HTML here (default: <log>.html)")
+    pr.add_argument("--open", action="store_true", help="open the report in a browser when done")
+
     pd = sub.add_parser("diff", help="compare two receipts")
     pd.add_argument("a", help="path to receipt A")
     pd.add_argument("b", help="path to receipt B")
@@ -61,6 +70,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return cmd_keygen(args)
     if args.command == "verify-log":
         return cmd_verify_log(args)
+    if args.command == "report":
+        from mizan.report import cmd_report
+        return cmd_report(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 
