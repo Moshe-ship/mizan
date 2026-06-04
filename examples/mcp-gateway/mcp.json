@@ -1,0 +1,13 @@
+{
+  "server": {
+    "command": "python3",
+    "args": ["examples/mcp-gateway/echo_server.py"],
+    "env": {}
+  },
+  "policy": {
+    "allow_tools": ["safe_echo"]
+  },
+  "receipt": {
+    "secret": "gateway-demo-secret"
+  }
+}

@@ -66,10 +66,17 @@ def _verify(doc, *, allow_mismatch=False, tmp=None):
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(doc, fh)
     import os
+    old = os.environ.get("MIZAN_RECEIPT_SECRET")
     os.environ["MIZAN_RECEIPT_SECRET"] = SECRET
-    return cmd_verify(types.SimpleNamespace(
-        receipt=path, secret_env="MIZAN_RECEIPT_SECRET",
-        allow_unsigned=False, allow_claim_mismatch=allow_mismatch))
+    try:
+        return cmd_verify(types.SimpleNamespace(
+            receipt=path, secret_env="MIZAN_RECEIPT_SECRET",
+            allow_unsigned=False, allow_claim_mismatch=allow_mismatch))
+    finally:
+        if old is None:
+            os.environ.pop("MIZAN_RECEIPT_SECRET", None)
+        else:
+            os.environ["MIZAN_RECEIPT_SECRET"] = old
 
 
 def test_cli_exit_codes_for_claim(tmp_path):

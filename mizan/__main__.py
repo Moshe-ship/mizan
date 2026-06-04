@@ -58,6 +58,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     pd.add_argument("b", help="path to receipt B")
     pd.add_argument("--include-volatile", action="store_true", help="also compare receipt_id/created_at/signature")
 
+    pgw = sub.add_parser("gateway", help="run a Mizan-guarded MCP stdio proxy (scan, gate, sign, log)")
+    pgw.add_argument("--config", required=True, metavar="FILE",
+                     help="mcp.json: downstream server, allow policy, signing secret")
+    pgw.add_argument("--receipt-log", required=True, metavar="FILE",
+                     help="hash-chained log to append signed receipts to")
+    pgw.add_argument("--secret-env", default="MIZAN_RECEIPT_SECRET",
+                     help="env var holding the HMAC secret (overrides config receipt.secret)")
+
     args = parser.parse_args(argv)
 
     from mizan.verify import cmd_diff, cmd_keygen, cmd_verify, cmd_verify_log
@@ -73,6 +81,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "report":
         from mizan.report import cmd_report
         return cmd_report(args)
+    if args.command == "gateway":
+        from mizan.gateway import cmd_gateway
+        return cmd_gateway(args)
     parser.error(f"unknown command {args.command!r}")
     return 2
 
