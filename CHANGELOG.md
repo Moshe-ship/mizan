@@ -4,6 +4,19 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.20] — 2026-06-03
+
+### Added
+- **`mizan report <log>`** — render a self-contained HTML dashboard from a
+  signed receipt log: per action shows session, tool, decision (allowed/blocked),
+  reason, signature validity, claim verdict, and a chain-integrity banner.
+  Stdlib-only (no JS/assets). `--secret-env`/`--public-key` check signatures;
+  `--out` sets the path; `--open` launches a browser.
+- **`examples/hermes-dogfood/`** — reproducible evidence from a real Hermes agent
+  guarded by Mizan (the `khwarizmi` plugin): the prompts, the signed hash-chained
+  `receipts.jsonl`, verbatim `verify-output.txt`, and the generated `report.html`,
+  with a README that verifies and reproduces it.
+
 ## [0.1.19] — 2026-06-02
 
 ### Changed

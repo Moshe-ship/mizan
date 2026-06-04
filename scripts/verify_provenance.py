@@ -21,7 +21,7 @@ EXPECTED_WORKFLOW = "release.yml"
 
 # package -> (version, expected GitHub "owner/repo")
 STACK = {
-    "mizan": ("0.1.19", "Moshe-ship/mizan"),
+    "mizan": ("0.1.20", "Moshe-ship/mizan"),
     "jabr": ("0.1.0", "Moshe-ship/jabr"),
     "muqabalah": ("0.1.0", "Moshe-ship/muqabalah"),
     "qadiya": ("0.1.0", "Moshe-ship/qadiya"),
