@@ -9,9 +9,10 @@
 **Your agent said it acted. Mizan proves whether it did.**
 
 > **Status: public alpha (pre-1.0).** The stack is installable, attested,
-> token-free, and tested end to end. It is *not* a claim of complete security —
-> repository hardening (branch/tag protection, required reviews) is in progress.
-> See [docs/SUPPLY_CHAIN.md](docs/SUPPLY_CHAIN.md).
+> token-free, and tested end to end. The repo is governance-protected: required
+> CI on PRs, no force-push or branch deletion, and immutable version tags
+> (`enforce_admins` is off by design for a solo maintainer). This is *not* a
+> claim of complete security. See [docs/SUPPLY_CHAIN.md](docs/SUPPLY_CHAIN.md).
 
 Put Mizan in front of your agent's tools. It does four jobs, and every action
 leaves a signed, verifiable receipt:

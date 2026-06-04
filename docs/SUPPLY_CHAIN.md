@@ -93,6 +93,8 @@ patch version rather than trying to overwrite.
 ## Honest scope
 
 This covers **distribution integrity** (token-free, attested, reproducible
-workflows). It is *not* a claim of total security. Repository-level hardening
-(branch protection, required reviews on release workflows, protected tags) is
-tracked separately and is a known gap while the stack is pre-1.0.
+workflows). It is *not* a claim of total security. Repository-level hardening is
+in place: branch protection with required CI on PRs, no force-push or branch
+deletion, and immutable version tags. `enforce_admins` is off by design for a
+solo maintainer, so required human review on every change is the remaining
+pre-1.0 gap.
