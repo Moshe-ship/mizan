@@ -32,7 +32,7 @@ pip install -e ".[all,test,ed25519]"
 python -m pytest -q
 ```
 
-Expected: all tests pass (124 at time of writing), across Python 3.10–3.13 in CI.
+Expected: all tests pass (125 at time of writing), across Python 3.10–3.13 in CI.
 
 ## 3. PyPI provenance for the whole stack (stdlib only)
 
@@ -47,7 +47,7 @@ python scripts/verify_provenance.py
 Expected: `ALL PROVENANCE VERIFIED`. Or check one by hand:
 
 ```bash
-curl -s https://pypi.org/integrity/mizan/0.1.20/mizan-0.1.20-py3-none-any.whl/provenance \
+curl -s https://pypi.org/integrity/mizan/0.1.21/mizan-0.1.21-py3-none-any.whl/provenance \
   | python -c "import sys,json; b=json.load(sys.stdin)['attestation_bundles'][0]['publisher']; print(b['kind'], b['repository'], b['workflow'])"
 # -> GitHub Moshe-ship/mizan release.yml
 ```

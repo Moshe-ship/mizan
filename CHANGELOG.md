@@ -4,6 +4,29 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.21] — 2026-06-03
+
+### Added
+- **`mizan gateway --config mcp.json --receipt-log receipts.jsonl`** — a
+  Mizan-guarded **MCP stdio proxy**. Launches a downstream MCP server from
+  config and relays JSON-RPC transparently (no MCP SDK dependency), while:
+  scanning every `tools/list` descriptor (`mcpscan`, flags poisoning); gating
+  every `tools/call` against a `policy.allow_tools` allowlist — **blocked calls
+  never reach downstream** (the gateway returns an MCP tool error); forwarding
+  allowed calls and capturing the real result; and emitting a **signed Receipt
+  v0** for both outcomes into a hash-chained log (`mizan verify-log` /
+  `mizan report` work on it). Handles ids, errors, subprocess lifecycle,
+  downstream stderr, malformed JSON, and graceful drain-on-shutdown.
+- **`examples/mcp-gateway/`** — a real downstream server (`echo_server.py`:
+  `safe_echo`/`delete_db`/`poisoned_tool`), `mcp.json`, and a README. The
+  acceptance test (`tests/test_gateway.py`) drives the real gateway + real
+  server end-to-end (no mocks).
+
+### Scope
+- The gateway guards **one downstream stdio MCP server** per config — a real
+  single-server guarded proxy, not a multi-server router. Multi-server configs,
+  per-tool policies, and OTel export are planned for a later version.
+
 ## [0.1.20] — 2026-06-03
 
 ### Added
