@@ -4,6 +4,24 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.22] — 2026-06-04
+
+### Added
+- **`mizan scan <tools.json>`** — a top-level subcommand over the multilingual
+  MCP poisoning detectors (BiDi, invisible, homoglyph, Arabizi, code-switch,
+  semantic exfil, override), with `--mode audit|warn|block` and an optional
+  `--receipt-log` that emits a signed Receipt v0 per scanned tool.
+- **`--arabic` mode** — separates **Arabic-specific** risk (Arabizi, Arabic/
+  English code-switching, transliteration, Arabic semantic exfil) from
+  **generic** Unicode/tool-poisoning risk (BiDi, invisible, homoglyph,
+  override), reporting `arabic_risk` and `generic_risk` per tool. Adds an
+  Arabic-only **transliteration** check (`R-TRANSLIT-001`) for romanized Arabic
+  directives in pure Latin script that English-keyword and mixed-script
+  code-switch rules both miss. Plain and `--arabic` produce different,
+  assertable output. Arabic mode *separates* Arabic-specific from generic risk;
+  it does not claim to replace a generic scanner.
+- **`examples/arabic-scan/`** — a one-tool-per-risk-class fixture and README.
+
 ## [0.1.21] — 2026-06-03
 
 ### Added
