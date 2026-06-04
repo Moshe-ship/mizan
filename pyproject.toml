@@ -50,6 +50,7 @@ preflight = [
 verify = ["toolproof-receipt>=0.5.2,<0.6.0"]
 ed25519 = ["cryptography>=41"]  # asymmetric receipt signing; HMAC stays the default
 openai = ["openai-agents>=0.1"]  # OpenAI Agents SDK — only for the adapter; core needs none
+langgraph = ["langgraph>=0.2", "langchain-core>=0.3"]  # LangGraph adapter; core needs none
 all = [
     "jabr>=0.1.0,<0.2.0",
     "muqabalah>=0.1.0,<0.2.0",

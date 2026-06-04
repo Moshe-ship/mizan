@@ -46,7 +46,37 @@ chain. **Tests:** [`tests/test_adapter_openai_sdk.py`](../tests/test_adapter_ope
 drives the real SDK (success + error paths); skipped automatically when the SDK
 isn't installed.
 
-## LangGraph · CrewAI
+## LangGraph / LangChain
 
-Planned next, one at a time, to the same bar: import-safe adapter, signed
-Receipt v0 per tool action, a real smoke test, and clean-install docs.
+```bash
+pip install "mizan[langgraph]"     # adds langgraph + langchain-core; core needs none
+```
+
+Compose under LangChain's `@tool`, or wrap existing tools before handing them to
+a graph:
+
+```python
+from langchain_core.tools import tool
+from mizan.adapters.langgraph import receipt_tool, wrap_tools, chain_sink
+
+@tool                                                   # schema from the signature
+@receipt_tool(secret="…", sink=chain_sink("receipts.jsonl"))
+def get_weather(city: str) -> dict:
+    return {"city": city, "temp": 72}
+
+# or wrap a whole list for a ToolNode / create_react_agent:
+guarded = wrap_tools(my_tools, secret="…", sink=chain_sink("receipts.jsonl"))
+```
+
+Every `.invoke()` appends a signed Receipt v0. Verify with `mizan verify-log` /
+`mizan report` as above.
+
+**Runnable example:** [`examples/langgraph_receipt.py`](../examples/langgraph_receipt.py)
+(no LLM needed). **Tests:** [`tests/test_adapter_langgraph.py`](../tests/test_adapter_langgraph.py)
+drive the real LangChain runtime (compose, wrap, error path); skipped when
+LangChain isn't installed.
+
+## CrewAI
+
+Planned next, to the same bar: import-safe adapter, signed Receipt v0 per tool
+action, a real smoke test, and clean-install docs.
