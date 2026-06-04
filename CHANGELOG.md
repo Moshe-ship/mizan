@@ -4,6 +4,20 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.24] — 2026-06-04
+
+### Added
+- **LangGraph / LangChain integration**, verified against the real runtime.
+  `mizan.adapters.langgraph` (import-safe; `pip install "mizan[langgraph]"`)
+  offers two paths, both emitting a signed Receipt v0 per `.invoke()`: compose
+  `receipt_tool` under LangChain's `@tool`, or `wrap_tool` / `wrap_tools` to
+  guard an existing tool list before a `ToolNode` / `create_react_agent`.
+  Re-exports `chain_sink`, so receipts join the same `mizan verify-log`-able
+  chain as the gateway, scanner, and OpenAI adapter.
+- **Real LangChain smoke test** (`tests/test_adapter_langgraph.py`): compose,
+  wrap, and error paths on langgraph 1.x / langchain-core 1.x. Skips cleanly
+  without the SDK; CI installs the `langgraph` extra. Example + docs updated.
+
 ## [0.1.23] — 2026-06-04
 
 ### Added
