@@ -34,6 +34,23 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+  crewai-adapter:
+    # CrewAI's native deps (tiktoken, …) build on 3.11/3.12, so the real CrewAI
+    # adapter smoke test runs in a dedicated 3.11 job rather than the matrix.
+    name: CrewAI adapter (real runtime, py3.11)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+      - name: Install mizan + crewai extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[test,crewai]"
+      - name: Run the real CrewAI adapter smoke test
+        run: python -m pytest tests/test_adapter_crewai.py -v
+
   scanner-standalone:
     # Proves the README promise: `pip install mizan` gives a working scanner
     # with NO primitives installed. Guards the regression where __init__

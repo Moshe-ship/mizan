@@ -78,5 +78,30 @@ LangChain isn't installed.
 
 ## CrewAI
 
-Planned next, to the same bar: import-safe adapter, signed Receipt v0 per tool
-action, a real smoke test, and clean-install docs.
+```bash
+pip install "mizan[crewai]"     # needs Python 3.11/3.12 (heavy native deps, e.g. tiktoken)
+```
+
+Compose under CrewAI's `@tool`, or wrap existing tools before an Agent/Crew:
+
+```python
+from crewai.tools import tool
+from mizan.adapters.crewai import receipt_tool, wrap_tools, chain_sink
+
+@tool("get_weather")                                    # schema from the signature
+@receipt_tool(secret="…", sink=chain_sink("receipts.jsonl"))
+def get_weather(city: str) -> dict:
+    return {"city": city, "temp": 72}
+
+guarded = wrap_tools(my_tools, secret="…", sink=chain_sink("receipts.jsonl"))
+```
+
+Every `.run()` appends a signed Receipt v0. Verify with `mizan verify-log` /
+`mizan report`.
+
+**Runnable example:** [`examples/crewai_receipt.py`](../examples/crewai_receipt.py)
+(no LLM needed). **Tests:** [`tests/test_adapter_crewai.py`](../tests/test_adapter_crewai.py)
+drive the **real** CrewAI runtime (compose, wrap, error path) — nothing mocked,
+verified on crewai 1.14.x / Python 3.11. CI runs it in a dedicated 3.11 job
+(CrewAI's native deps don't build across the whole 3.10–3.13 matrix); the test
+skips cleanly where CrewAI isn't installed.
