@@ -4,6 +4,21 @@ All notable changes to `mizan` are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project adheres to
 semantic versioning (pre-1.0: minor = features, patch = fixes/hardening).
 
+## [0.1.23] — 2026-06-04
+
+### Added
+- **OpenAI Agents SDK integration, verified against the real SDK.** The
+  `mizan.adapters.openai` adapter (import-safe; `pip install "mizan[openai]"`)
+  composes under the SDK's `@function_tool` and emits a signed Receipt v0 per
+  tool call. New **`chain_sink(path)`** appends adapter receipts to a
+  hash-chained `ReceiptLog`, so they're `mizan verify-log` / `mizan report`-able
+  alongside gateway and scanner receipts.
+- **Real SDK smoke test** (`tests/test_adapter_openai_sdk.py`) drives the actual
+  OpenAI Agents SDK — builds a `FunctionTool` and invokes it via
+  `on_invoke_tool` (success + error paths), asserting a signed, verifiable
+  receipt. Skips cleanly without the SDK; CI installs the `openai` extra so it
+  runs there. See [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
+
 ## [0.1.22] — 2026-06-04
 
 ### Added

@@ -28,11 +28,12 @@ claimed (see the benchmark doc's *Follow-up*).
 ## 2. The test suite
 
 ```bash
-pip install -e ".[all,test,ed25519]"
+pip install -e ".[all,test,ed25519,openai]"
 python -m pytest -q
 ```
 
-Expected: all tests pass (131 at time of writing), across Python 3.10–3.13 in CI.
+Expected: all tests pass (133 at time of writing), across Python 3.10–3.13 in CI.
+(Without the `openai` extra, the 2 OpenAI Agents SDK tests skip cleanly.)
 
 ## 3. PyPI provenance for the whole stack (stdlib only)
 
@@ -47,7 +48,7 @@ python scripts/verify_provenance.py
 Expected: `ALL PROVENANCE VERIFIED`. Or check one by hand:
 
 ```bash
-curl -s https://pypi.org/integrity/mizan/0.1.22/mizan-0.1.22-py3-none-any.whl/provenance \
+curl -s https://pypi.org/integrity/mizan/0.1.23/mizan-0.1.23-py3-none-any.whl/provenance \
   | python -c "import sys,json; b=json.load(sys.stdin)['attestation_bundles'][0]['publisher']; print(b['kind'], b['repository'], b['workflow'])"
 # -> GitHub Moshe-ship/mizan release.yml
 ```
